@@ -1,0 +1,19 @@
+{
+    "name": "miso/static-site-generator",
+    "description": "Lightweight PHP static site generator with Twig templates, Markdown sources, collections, and pagination.",
+    "type": "project",
+    "require": {
+        "php": "^8.2",
+        "twig/twig": "^3.10",
+        "league/commonmark": "^2.5",
+        "symfony/yaml": "^7.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Miso\\": "src/"
+        }
+    },
+    "bin": [
+        "bin/miso"
+    ]
+}

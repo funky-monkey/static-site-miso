@@ -1,0 +1,12 @@
+primary:
+  - title: "Home"
+    url: "/"
+  - title: "Blog"
+    url: "/blog/"
+    children:
+      - title: "Latest"
+        url: "/blog/"
+      - title: "Archive"
+        url: "/blog/page/2/"
+  - title: "About"
+    url: "/about/"

@@ -1,0 +1,39 @@
+{% extends "base.twig.html" %}
+
+{% block content %}
+<section>
+    <header>
+        <h2>{{ collection.name|title }}</h2>
+    </header>
+
+    <ul>
+        {% for document in documents %}
+            <li>
+                <h3><a href="{{ document.permalink() }}">{{ document.title() }}</a></h3>
+                {% if document.date %}
+                    <p><time datetime="{{ document.date.format('c') }}">{{ document.date|date("F j, Y") }}</time></p>
+                {% endif %}
+                {% if document.frontMatter.excerpt is defined %}
+                    <p>{{ document.frontMatter.excerpt }}</p>
+                {% endif %}
+            </li>
+        {% else %}
+            <li>No entries yet.</li>
+        {% endfor %}
+    </ul>
+
+    {% if pagination.total_pages > 1 %}
+        <nav aria-label="Pagination">
+            {% if pagination.previous_page %}
+                <a href="{{ pagination.previous_page == 1 ? '/' ~ collection.name ~ '/' : '/' ~ collection.name ~ '/page/' ~ pagination.previous_page ~ '/' }}">&larr; Previous</a>
+            {% endif %}
+
+            <span>Page {{ pagination.page }} of {{ pagination.total_pages }}</span>
+
+            {% if pagination.next_page %}
+                <a href="{{ '/' ~ collection.name ~ '/page/' ~ pagination.next_page ~ '/' }}">Next &rarr;</a>
+            {% endif %}
+        </nav>
+    {% endif %}
+</section>
+{% endblock %}

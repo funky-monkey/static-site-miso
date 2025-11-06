@@ -1,0 +1,41 @@
+site:
+  title: "Miso Sample Site"
+  description: "Generated with the Miso static site generator."
+  base_url: ""
+  seo:
+    author: ""
+    default_keywords: []
+    canonical: ""
+    social_image: ""
+    open_graph:
+      title: null
+      description: null
+      image: null
+      url: null
+      type: "website"
+      locale: "en_US"
+      site_name: null
+    twitter:
+      card: "summary_large_image"
+      site: ""
+      creator: ""
+      title: null
+      description: null
+      image: null
+
+paths:
+  content: "content"
+  templates: "templates"
+  output: "_site"
+  assets:
+    - "css"
+
+collections:
+  blog:
+    path: "content/blog"
+    pagination:
+      per_page: 5
+    layout: "collection-item.twig.html"
+    list_layout: "collection.twig.html"
+    permalink: "/blog/{slug}/"
+    list_permalink: "/blog/"

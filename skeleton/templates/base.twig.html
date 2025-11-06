@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{{ page.title ?? site.title }}</title>
+    {% if site.description is defined and site.description %}
+        <meta name="description" content="{{ site.description }}">
+    {% endif %}
+    {% if site.seo.author is defined and site.seo.author %}
+        <meta name="author" content="{{ site.seo.author }}">
+    {% endif %}
+    {% if site.seo.default_keywords is defined and site.seo.default_keywords %}
+        <meta name="keywords" content="{{ site.seo.default_keywords|join(', ') }}">
+    {% endif %}
+    {% if site.seo.canonical is defined and site.seo.canonical %}
+        <link rel="canonical" href="{{ site.seo.canonical }}">
+    {% endif %}
+    {# Open Graph defaults #}
+    {% set og = site.seo.open_graph ?? {} %}
+    {% if og.title ?? page.title ?? site.title %}
+        <meta property="og:title" content="{{ og.title ?? page.title ?? site.title }}">
+    {% endif %}
+    {% if og.description ?? page.description ?? site.description %}
+        <meta property="og:description" content="{{ og.description ?? page.description ?? site.description }}">
+    {% endif %}
+    {% if og.url ?? site.base_url %}
+        <meta property="og:url" content="{{ og.url ?? site.base_url }}">
+    {% endif %}
+    {% if og.image ?? site.seo.social_image %}
+        <meta property="og:image" content="{{ og.image ?? site.seo.social_image }}">
+    {% endif %}
+    {% if og.type %}
+        <meta property="og:type" content="{{ og.type }}">
+    {% endif %}
+    {% if og.locale %}
+        <meta property="og:locale" content="{{ og.locale }}">
+    {% endif %}
+    {% if og.site_name ?? site.title %}
+        <meta property="og:site_name" content="{{ og.site_name ?? site.title }}">
+    {% endif %}
+
+    {# Twitter meta #}
+    {% set twitter = site.seo.twitter ?? {} %}
+    {% if twitter.card %}
+        <meta name="twitter:card" content="{{ twitter.card }}">
+    {% endif %}
+    {% if twitter.site %}
+        <meta name="twitter:site" content="{{ twitter.site }}">
+    {% endif %}
+    {% if twitter.creator %}
+        <meta name="twitter:creator" content="{{ twitter.creator }}">
+    {% endif %}
+    {% if twitter.title ?? og.title ?? page.title ?? site.title %}
+        <meta name="twitter:title" content="{{ twitter.title ?? og.title ?? page.title ?? site.title }}">
+    {% endif %}
+    {% if twitter.description ?? og.description ?? page.description ?? site.description %}
+        <meta name="twitter:description" content="{{ twitter.description ?? og.description ?? page.description ?? site.description }}">
+    {% endif %}
+    {% if twitter.image ?? og.image ?? site.seo.social_image %}
+        <meta name="twitter:image" content="{{ twitter.image ?? og.image ?? site.seo.social_image }}">
+    {% endif %}
+    <link rel="stylesheet" href="/css/main.css">
+</head>
+<body>
+<header>
+    <h1><a href="/">{{ site.title }}</a></h1>
+    <p>{{ site.description }}</p>
+    {% if menus.primary is defined and menus.primary|length %}
+        {% import _self as nav %}
+        <nav aria-label="Main navigation">
+            {{ nav.render_menu(menus.primary) }}
+        </nav>
+    {% endif %}
+</header>
+<main>
+    {% block content %}{% endblock %}
+</main>
+<footer>
+    <p>&copy; {{ "now"|date("Y") }} {{ site.title }}</p>
+</footer>
+</body>
+</html>
+
+{% macro render_menu(items) %}
+    <ul>
+        {% for item in items %}
+            <li>
+                {% if item.url is defined %}
+                    <a href="{{ item.url }}">{{ item.title ?? item.name ?? '' }}</a>
+                {% else %}
+                    <span>{{ item.title ?? item.name ?? '' }}</span>
+                {% endif %}
+                {% if item.children is defined and item.children %}
+                    {{ _self.render_menu(item.children) }}
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
+{% endmacro %}

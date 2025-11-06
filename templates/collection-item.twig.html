@@ -1,0 +1,15 @@
+{% extends "base.twig.html" %}
+
+{% block content %}
+<article>
+    <header>
+        <h2>{{ page.title }}</h2>
+        {% if page.date is defined %}
+            <p><time datetime="{{ page.date }}">{{ page.date|date("F j, Y") }}</time></p>
+        {% endif %}
+    </header>
+    <section>
+        {{ content|raw }}
+    </section>
+</article>
+{% endblock %}
