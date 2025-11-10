@@ -157,6 +157,20 @@ miso run --port=9000 --host=0.0.0.0
 2. Move your `_sass`, `assets`, or theme CSS into the `css/` directory (or list additional asset folders in `_config/site.yaml`).
 3. Adjust template asset paths (for example `<link rel="stylesheet" href="/css/theme.css">`).
 
+### Migrating a Hugo Theme
+
+1. Inventory the theme’s `layouts/`, `assets/` (or `static/`), and any custom shortcodes/partials. Note navigation/menu definitions (usually in `config.toml`) and content types.
+2. Copy key Hugo layouts into `templates/` and convert Go template syntax (`{{ .Title }}`, `{{ partial }}`) to Twig (`{{ page.title }}`, `{% include %}`). Use `.twig.html` filenames to match Miso’s convention.
+3. Drop compiled CSS/JS/images from Hugo’s `static/` (or the output of its asset pipeline) into `css/` or other asset folders listed in `_config/site.yaml`.
+4. Translate Hugo menu definitions into `_config/menu.yaml` (the new `menus.primary` renderer handles nested menus automatically).
+5. Map Hugo variables to Miso equivalents when rewriting layouts:
+   - `.Site.Title` → `site.title`
+   - `.Content` → `content|raw`
+   - `.Params.foo` → `page.foo`
+   - `.Paginator` → `pagination`
+6. Replace shortcodes/partials with Twig includes or custom filters. Any Hugo-specific Markdown shortcodes will need manual conversion.
+7. Run `miso build` and `miso run` iteratively to confirm the pages match the original Hugo output.
+
 ### Next steps
 
 - Register Twig filters/functions to mimic Liquid tags you depend on.
