@@ -171,6 +171,7 @@ miso run --port=9000 --host=0.0.0.0
 1. Copy your Liquid layouts/partials into `templates/` and translate Liquid syntax to Twig (`{{ ... }}` carries over, `{% ... %}` blocks are similar).
 2. Move your `_sass`, `assets`, or theme CSS into the `css/` directory (or list additional asset folders in `_config/site.yaml`).
 3. Adjust template asset paths (for example `<link rel="stylesheet" href="/css/theme.css">`).
+4. Jekyll’s `_layouts/` → `templates/` (rename to `.twig.html`), and `_includes/` → `templates/partials/` (reference via `{% include "partials/name.twig.html" %}`).
 
 ### Migrating a Hugo Theme
 
