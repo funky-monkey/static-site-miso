@@ -157,7 +157,7 @@ miso run --port=9000 --host=0.0.0.0
 - Flow control `{% if %}`, `{% for %}`, `{% include %}` become Twig `{% if %}`, `{% for %}`, `{% include %}`—adjust Liquid filters (`default`, `date`, `downcase`, etc.) to Twig equivalents or custom filters.
 - Front matter variables map 1:1: `page.title`, `page.slug`, `page.collection`; site-wide values live under `site.*`.
 - Convert `{% assign foo = ... %}` to `{% set foo = ... %}`. Liquid capture blocks → Twig `{% set foo %}...{% endset %}`.
-- Replace Liquid includes/snippets with Twig includes: `{% include "partials/header.twig.html" with { foo: "bar" } %}`.
+- Replace Liquid includes/snippets with Twig includes. Example: Liquid’s `{% include 'header.html' foo='bar' %}` becomes `{% include "partials/header.twig.html" with { foo: 'bar' } %}` (Twig also supports `{% include "partials/header.twig.html" %}` when no variables are passed).
 - For Liquid’s `forloop` helpers, Twig exposes loop metadata via `loop.index`, `loop.first`, etc.
 
 ### Migrating a Jekyll Theme
