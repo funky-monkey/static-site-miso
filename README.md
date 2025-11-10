@@ -156,12 +156,15 @@ miso run --port=9000 --host=0.0.0.0
 | Liquid Pattern | Twig Equivalent |
 | --- | --- |
 | `{{ page.title }}` | `{{ page.title }}` (same output braces; filters use `|`, e.g., `{{ page.date \| date("F j, Y") }}`) |
-| `{% if page.draft %}...{% endif %}` | `{% if page.draft %}...{% endif %}` (control structures look familiar; update filters/functions as needed) |
+| `{% if page.draft %}...{% endif %}` | `{% if page.draft %}...{% endif %}` (control structures share the `{% %}` delimiters) |
 | `{% assign foo = "bar" %}` | `{% set foo = 'bar' %}` (capture blocks become `{% set foo %}...{% endset %}`) |
 | `{% include 'header.html' foo='bar' %}` | `{% include "partials/header.twig.html" with { foo: 'bar' } %}` (omit `with` if no variables are passed) |
 | `{{ site.time \| date: "%Y" }}` | `{{ "now" \| date("Y") }}` or `{{ page.date \| date("Y") }}` |
 | Inside `{% for post in site.posts %}` use `{{ forloop.index }}` | Inside `{% for post in collection %}` use `{{ loop.index }}`, `loop.first`, `loop.last`, etc. |
+| `{% capture %}...{% endcapture %}` | `{% set foo %}...{% endset %}` |
 | `page.title`, `page.slug`, `page.collection`, `site.title` | same property names in Twig; site-level data accessible via `site.*` |
+
+> Twig uses `{% ... %}` for statements (loops, conditionals, includes, `set`, macros) and `{{ ... }}` for output—consistent with Liquid’s delimiter style, so most templates feel familiar after swapping syntax.
 
 ### Migrating a Jekyll Theme
 
