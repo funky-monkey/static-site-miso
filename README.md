@@ -153,12 +153,15 @@ miso run --port=9000 --host=0.0.0.0
 
 ### Liquid → Twig Quick Guide
 
-- Replace Liquid’s `{{ variable }}` output with Twig’s `{{ variable }}` (same braces, but Twig filters use `|` like `{{ page.date|date("F j, Y") }}`).
-- Flow control `{% if %}`, `{% for %}`, `{% include %}` become Twig `{% if %}`, `{% for %}`, `{% include %}`—adjust Liquid filters (`default`, `date`, `downcase`, etc.) to Twig equivalents or custom filters.
-- Front matter variables map 1:1: `page.title`, `page.slug`, `page.collection`; site-wide values live under `site.*`.
-- Convert `{% assign foo = ... %}` to `{% set foo = ... %}`. Liquid capture blocks → Twig `{% set foo %}...{% endset %}`.
-- Replace Liquid includes/snippets with Twig includes. Example: Liquid’s `{% include 'header.html' foo='bar' %}` becomes `{% include "partials/header.twig.html" with { foo: 'bar' } %}` (Twig also supports `{% include "partials/header.twig.html" %}` when no variables are passed).
-- For Liquid’s `forloop` helpers, Twig exposes loop metadata via `loop.index`, `loop.first`, etc.
+| Liquid Pattern | Twig Equivalent |
+| --- | --- |
+| `{{ page.title }}` | `{{ page.title }}` (same output braces; filters use `|`, e.g., `{{ page.date \| date("F j, Y") }}`) |
+| `{% if page.draft %}...{% endif %}` | `{% if page.draft %}...{% endif %}` (control structures look familiar; update filters/functions as needed) |
+| `{% assign foo = "bar" %}` | `{% set foo = 'bar' %}` (capture blocks become `{% set foo %}...{% endset %}`) |
+| `{% include 'header.html' foo='bar' %}` | `{% include "partials/header.twig.html" with { foo: 'bar' } %}` (omit `with` if no variables are passed) |
+| `{{ site.time \| date: "%Y" }}` | `{{ "now" \| date("Y") }}` or `{{ page.date \| date("Y") }}` |
+| Inside `{% for post in site.posts %}` use `{{ forloop.index }}` | Inside `{% for post in collection %}` use `{{ loop.index }}`, `loop.first`, `loop.last`, etc. |
+| `page.title`, `page.slug`, `page.collection`, `site.title` | same property names in Twig; site-level data accessible via `site.*` |
 
 ### Migrating a Jekyll Theme
 
