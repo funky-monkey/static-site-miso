@@ -63,6 +63,7 @@ Options:
   --force            Overwrite existing files when scaffolding
   --host=HOST        Host for built-in server (default 127.0.0.1) [run]
   --port=PORT        Port for built-in server (default 8000) [run]
+  --watch            Rebuild automatically when content/templates/css change [run]
 
 HELP;
         echo COPYRIGHT . PHP_EOL;
@@ -85,6 +86,8 @@ function runBuild(array $arguments, array $options): void
 
 function runServe(array $arguments, array $options): void
 {
+    $watch = isset($options['watch']);
+
     [$generator, $config, $projectRoot] = initializeGenerator($options);
 
     try {
@@ -105,31 +108,44 @@ function runServe(array $arguments, array $options): void
         exit(1);
     }
 
+    $serverProcess = startPhpServer($outputDir, $host, $port);
     echo "Serving {$config->get('site.title', 'site')} at http://{$host}:{$port} (Ctrl+C to stop)\n";
 
-    $descriptorSpec = [
-        0 => STDIN,
-        1 => STDOUT,
-        2 => STDERR,
-    ];
-
-    $process = proc_open(
-        [
-            PHP_BINARY,
-            '-S', "{$host}:{$port}",
-            '-t', $outputDir,
-        ],
-        $descriptorSpec,
-        $pipes,
-        $outputDir
-    );
-
-    if (!is_resource($process)) {
-        fwrite(STDERR, "Failed to start PHP built-in server.\n");
-        exit(1);
+    if (!$watch) {
+        waitForProcess($serverProcess);
+        return;
     }
 
-    proc_close($process);
+    echo "Watching for changes...\n";
+    $watchedExtensions = ['md', 'markdown', 'html', 'twig.html', 'css'];
+    $watchedDirs = [
+        $projectRoot . DIRECTORY_SEPARATOR . $config->path('content'),
+        $projectRoot . DIRECTORY_SEPARATOR . $config->path('templates'),
+        $projectRoot . DIRECTORY_SEPARATOR . 'css',
+    ];
+
+    $lastHashes = hashWatchedFiles($watchedDirs, $watchedExtensions);
+
+    while (true) {
+        if (!isProcessRunning($serverProcess)) {
+            $serverProcess = startPhpServer($outputDir, $host, $port);
+        }
+
+        $hash = hashWatchedFiles($watchedDirs, $watchedExtensions);
+
+        if ($hash !== $lastHashes) {
+            $lastHashes = $hash;
+            echo "[" . date('H:i:s') . "] Changes detected. Rebuilding...\n";
+            try {
+                $generator->build();
+                echo "[" . date('H:i:s') . "] Build complete.\n";
+            } catch (\Throwable $e) {
+                fwrite(STDERR, "[" . date('H:i:s') . "] Build failed: " . $e->getMessage() . PHP_EOL);
+            }
+        }
+
+        usleep(500000); // 0.5s
+    }
 }
 
 function runNew(string $path, bool $force): void
@@ -207,15 +223,96 @@ function parseOptions(array $arguments): array
     $remaining = [];
 
     foreach ($arguments as $arg) {
-        if (str_starts_with($arg, '--')) {
-            $parts = explode('=', substr($arg, 2), 2);
-            $key = $parts[0];
-            $value = $parts[1] ?? 'true';
-            $options[$key] = $value;
-        } else {
+        if (!str_starts_with($arg, '--')) {
             $remaining[] = $arg;
+            continue;
         }
+
+        $parts = explode('=', substr($arg, 2), 2);
+        $key = $parts[0];
+        $value = $parts[1] ?? 'true';
+        $options[$key] = $value;
     }
 
     return ['options' => $options, 'arguments' => $remaining];
+}
+
+function startPhpServer(string $outputDir, string $host, string $port)
+{
+    $descriptorSpec = [
+        0 => STDIN,
+        1 => STDOUT,
+        2 => STDERR,
+    ];
+
+    $process = proc_open(
+        [
+            PHP_BINARY,
+            '-S', "{$host}:{$port}",
+            '-t', $outputDir,
+        ],
+        $descriptorSpec,
+        $pipes,
+        $outputDir
+    );
+
+    if (!is_resource($process)) {
+        fwrite(STDERR, "Failed to start PHP built-in server.\n");
+        exit(1);
+    }
+
+    return $process;
+}
+
+function waitForProcess($process): void
+{
+    proc_close($process);
+}
+
+function isProcessRunning($process): bool
+{
+    if (!is_resource($process)) {
+        return false;
+    }
+
+    $status = proc_get_status($process);
+    return $status['running'] ?? false;
+}
+
+/**
+ * @param array<int, string> $directories
+ * @param array<int, string> $extensions
+ * @return array<int, string>
+ */
+function hashWatchedFiles(array $directories, array $extensions): array
+{
+    $hashes = [];
+
+    foreach ($directories as $directory) {
+        if (!is_dir($directory)) {
+            continue;
+        }
+
+        $iterator = new \RecursiveIteratorIterator(
+            new \RecursiveDirectoryIterator($directory, \FilesystemIterator::SKIP_DOTS)
+        );
+
+        /** @var \SplFileInfo $file */
+        foreach ($iterator as $file) {
+            if (!$file->isFile()) {
+                continue;
+            }
+
+            $ext = strtolower($file->getExtension());
+            if (!in_array($ext, $extensions, true)) {
+                continue;
+            }
+
+            $hashes[] = $file->getPathname() . ':' . $file->getMTime();
+        }
+    }
+
+    sort($hashes);
+
+    return $hashes;
 }
