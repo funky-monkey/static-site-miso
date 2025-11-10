@@ -62,13 +62,23 @@ class StaticSiteGenerator
         foreach ($collection as $document) {
             $layout = $document->frontMatter['layout'] ?? $itemLayout;
 
-            $html = $this->twig->render($layout, [
-                'site' => $siteMeta,
-                'page' => $document->frontMatter,
-                'content' => $document->contentHtml,
-                'collection' => $collection,
-                'menus' => $menus,
-            ]);
+            try {
+                $html = $this->twig->render($layout, [
+                    'site' => $siteMeta,
+                    'page' => $document->frontMatter,
+                    'content' => $document->contentHtml,
+                    'collection' => $collection,
+                    'menus' => $menus,
+                ]);
+            } catch (\Twig\Error\LoaderError $e) {
+                $message = sprintf(
+                    'Failed rendering "%s" using layout "%s": %s. Update the file front matter (layout key) or collection layout to reference an existing template (for example post.twig.html).',
+                    $document->sourcePath,
+                    $layout,
+                    $e->getMessage()
+                );
+                throw new \RuntimeException($message, 0, $e);
+            }
 
             $permalink = $document->frontMatter['permalink'] ?? $document->permalink(
                 base: '',
@@ -98,19 +108,30 @@ class StaticSiteGenerator
         for ($page = 1; $page <= $totalPages; $page++) {
             $documents = $paginator->page($page);
 
-            $html = $this->twig->render($listingLayout, [
-                'site' => $siteMeta,
-                'collection' => $collection,
-                'documents' => $documents,
-                'menus' => $menus,
-                'pagination' => [
-                    'page' => $page,
-                    'per_page' => $paginator->perPage(),
-                    'total_pages' => $totalPages,
-                    'next_page' => $page < $totalPages ? $page + 1 : null,
-                    'previous_page' => $page > 1 ? $page - 1 : null,
-                ],
-            ]);
+            try {
+                $html = $this->twig->render($listingLayout, [
+                    'site' => $siteMeta,
+                    'collection' => $collection,
+                    'documents' => $documents,
+                    'menus' => $menus,
+                    'pagination' => [
+                        'page' => $page,
+                        'per_page' => $paginator->perPage(),
+                        'total_pages' => $totalPages,
+                        'next_page' => $page < $totalPages ? $page + 1 : null,
+                        'previous_page' => $page > 1 ? $page - 1 : null,
+                    ],
+                ]);
+            } catch (\Twig\Error\LoaderError $e) {
+                $message = sprintf(
+                    'Failed rendering listing for collection "%s" (page %d) using layout "%s": %s. Check the collection list_layout setting in _config/site.yaml.',
+                    $collection->name,
+                    $page,
+                    $listingLayout,
+                    $e->getMessage()
+                );
+                throw new \RuntimeException($message, 0, $e);
+            }
 
             $permalink = $collection->config['list_permalink'] ?? '/' . $collection->name . '/';
 
