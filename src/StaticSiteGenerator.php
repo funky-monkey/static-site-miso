@@ -6,6 +6,8 @@ namespace Miso;
 
 use Miso\Content\Collection;
 use Miso\Content\ContentLoader;
+use Miso\Schema\SchemaLoader;
+use Miso\Schema\SchemaRenderer;
 use Miso\Site\SiteConfig;
 use Miso\Support\Filesystem;
 use Twig\Environment;
@@ -18,6 +20,8 @@ class StaticSiteGenerator
         private readonly Filesystem $filesystem,
         private readonly Environment $twig,
         private readonly string $projectRoot,
+        private readonly SchemaLoader $schemaLoader = new SchemaLoader(),
+        private readonly SchemaRenderer|null $schemaRenderer = null,
     ) {
     }
 
@@ -30,12 +34,15 @@ class StaticSiteGenerator
         $this->filesystem->ensureDirectory($outputDir);
         $this->filesystem->emptyDirectory($outputDir);
 
+        $configDir = $this->projectRoot . DIRECTORY_SEPARATOR . '_config';
+        $schemas = $this->schemaLoader->load($configDir);
+
         $pages = [];
         $collections = $this->loader->load($this->projectRoot, $this->config);
 
         foreach ($collections as $collection) {
             $this->sortCollection($collection);
-            $pages = array_merge($pages, $this->renderCollectionItems($collection, $outputDir));
+            $pages = array_merge($pages, $this->renderCollectionItems($collection, $outputDir, $schemas));
             $pages = array_merge($pages, $this->renderCollectionListing($collection, $outputDir));
         }
 
@@ -67,9 +74,10 @@ class StaticSiteGenerator
     }
 
     /**
+     * @param list<array{vars: array<string, mixed>, schema: array<string, mixed>, collections: ?list<string>}> $schemas
      * @return list<array{permalink: string, title: string, description: string, date: ?\DateTimeImmutable, collection: string, type: string}>
      */
-    private function renderCollectionItems(Collection $collection, string $outputDir): array
+    private function renderCollectionItems(Collection $collection, string $outputDir, array $schemas = []): array
     {
         $siteMeta = $this->config->get('site', []);
         $itemLayout = $collection->itemLayout() ?? ($collection->name === 'pages' ? 'page.twig.html' : 'collection-item.twig.html');
@@ -80,6 +88,12 @@ class StaticSiteGenerator
         foreach ($collection as $document) {
             $layout = $document->frontMatter['layout'] ?? $itemLayout;
 
+            $pageMeta = array_merge($document->frontMatter, ['date' => $document->date]);
+
+            $schemaBlocks = $this->schemaRenderer !== null
+                ? $this->schemaRenderer->renderForPage($schemas, is_array($siteMeta) ? $siteMeta : [], $pageMeta, $menus, $collection->name)
+                : [];
+
             try {
                 $html = $this->twig->render($layout, [
                     'site' => $siteMeta,
@@ -87,6 +101,7 @@ class StaticSiteGenerator
                     'content' => $document->contentHtml,
                     'collection' => $collection,
                     'menus' => $menus,
+                    'schemas' => $schemaBlocks,
                 ]);
             } catch (\Twig\Error\LoaderError $e) {
                 $message = sprintf(

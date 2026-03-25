@@ -1,0 +1,13 @@
+# BreadcrumbList schema — renders breadcrumb trails in Google SERPs.
+# The itemListElement is auto-generated from _config/menu.yaml (primary menu).
+# No manual entries needed — just set your base_url and activate the file.
+# Place this file at _config/breadcrumblist-schema.yml to activate it.
+# Applied to: every page.
+
+vars:
+  base_url: "https://example.com"
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "BreadcrumbList"
+  # itemListElement is automatically built from _config/menu.yaml

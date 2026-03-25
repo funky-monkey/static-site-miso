@@ -1,0 +1,32 @@
+# SoftwareApplication schema — describes your product in search results.
+# Shows pricing, platform, and ratings directly in Google SERPs.
+# Place this file at _config/software-application-schema.yml to activate it.
+# Applied to: every page.
+
+vars:
+  name: "My Plugin"
+  url: "https://example.com"
+  description: "A WordPress plugin that does something useful."
+  operating_system: "WordPress"
+  category: "BusinessApplication"
+  price: "0"
+  currency: "USD"
+  rating_value: "4.8"
+  rating_count: "124"
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "SoftwareApplication"
+  name: "{{ vars.name }}"
+  url: "{{ vars.url }}"
+  description: "{{ vars.description }}"
+  operatingSystem: "{{ vars.operating_system }}"
+  applicationCategory: "{{ vars.category }}"
+  offers:
+    "@type": "Offer"
+    price: "{{ vars.price }}"
+    priceCurrency: "{{ vars.currency }}"
+  aggregateRating:
+    "@type": "AggregateRating"
+    ratingValue: "{{ vars.rating_value }}"
+    ratingCount: "{{ vars.rating_count }}"

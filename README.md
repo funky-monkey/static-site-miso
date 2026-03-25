@@ -13,6 +13,7 @@ This is a PHP-based static site generator inspired by HydePHP and Jekyll. It com
 - `--sitemap` — generates a `sitemap.xml` following the sitemaps.org spec, with `<loc>` and `<lastmod>` for every rendered page
 - `--robots` — generates a `robots.txt` with a `Sitemap:` directive pointing to your sitemap
 - `--llms` — generates a `llms.txt` in the [llmstxt.org](https://llmstxt.org) format, a plain-text index of all pages grouped by collection for LLM consumption
+- Schema.org JSON-LD injection — drop a `*-schema.yml` file in `_config/` to activate structured data for any page or collection
 - Single PHP CLI (`miso`) that you can install locally or globally
 
 ### Installation
@@ -205,6 +206,73 @@ miso run --watch --sitemap --robots --llms
 | `--sitemap` | `_site/sitemap.xml` | Standard XML sitemap (sitemaps.org spec). Includes all rendered pages with `<loc>` and, when available, `<lastmod>` from front matter `date`. Requires `site.base_url` in `_config/site.yaml`. |
 | `--robots` | `_site/robots.txt` | Robots exclusion file (`User-agent: * / Allow: /`). Appends a `Sitemap:` directive when `site.base_url` is set. |
 | `--llms` | `_site/llms.txt` | Plain-text site index in [llmstxt.org](https://llmstxt.org) format. Lists all pages grouped by collection with titles, URLs, and descriptions. |
+
+### Schema.org Structured Data
+
+Miso supports opt-in JSON-LD injection via schema configuration files. Drop a `*-schema.yml` file into `_config/` and Miso will automatically render and inject a `<script type="application/ld+json">` block into every applicable page.
+
+No schema files = no schemas. Each file is independent — add only the schemas your project needs.
+
+**File format**
+
+Each schema file has three sections:
+
+```yaml
+# Optional — limit to specific collections. Omit to apply to all pages.
+collections:
+  - blog
+
+# Your custom values, referenced as {{ vars.* }} in the schema below.
+vars:
+  name: "My Site"
+  url: "https://example.com"
+
+# The actual JSON-LD structure. String values support Twig expressions:
+# {{ vars.* }}  — values from the vars section above
+# {{ site.* }}  — values from _config/site.yaml
+# {{ page.* }}  — values from the current page's front matter
+schema:
+  "@context": "https://schema.org"
+  "@type": "WebSite"
+  name: "{{ vars.name }}"
+  url: "{{ vars.url }}"
+```
+
+**Available schemas**
+
+| File | Type | Applied to |
+| --- | --- | --- |
+| `_config/website-schema.yml` | `WebSite` | All pages — establishes site identity, enables Sitelinks Searchbox |
+| `_config/organization-schema.yml` | `Organization` | All pages — company name, logo, social links, contact |
+| `_config/webpage-schema.yml` | `WebPage` | All pages — per-page title, description, URL |
+| `_config/breadcrumblist-schema.yml` | `BreadcrumbList` | All pages — auto-built from `_config/menu.yaml`, no manual entries needed |
+| `_config/software-application-schema.yml` | `SoftwareApplication` | All pages — product name, pricing, ratings |
+| `_config/article-schema.yml` | `Article` | Blog collection only — headline, date, author, publisher |
+
+Copy the templates from `examples/schemas/` into your `_config/` directory, fill in your values, and run `miso build`.
+
+**Outputting schemas in templates**
+
+Miso passes a `schemas` variable to every page template — an array of rendered JSON-LD strings. Add the following to your base layout's `<head>`:
+
+```twig
+{% for schema in schemas %}
+<script type="application/ld+json">{{ schema|raw }}</script>
+{% endfor %}
+```
+
+**BreadcrumbList auto-generation**
+
+The `BreadcrumbList` schema is the only one that does not require a `schema:` body — Miso builds the `itemListElement` array automatically from `_config/menu.yaml`. Set `vars.base_url` to your site's root URL and the rest is handled for you:
+
+```yaml
+vars:
+  base_url: "https://example.com"
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "BreadcrumbList"
+```
 
 ### Liquid → Twig Quick Guide
 

@@ -1,0 +1,28 @@
+# Organization schema — describes the company behind the site.
+# Influences Google's Knowledge Panel and brand identity in search.
+# Place this file at _config/organization-schema.yml to activate it.
+# Applied to: every page.
+
+vars:
+  name: "My Company"
+  url: "https://example.com"
+  logo: "https://example.com/img/logo.png"
+  email: "hello@example.com"
+  social_twitter: "https://twitter.com/example"
+  social_linkedin: "https://linkedin.com/company/example"
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "Organization"
+  name: "{{ vars.name }}"
+  url: "{{ vars.url }}"
+  logo:
+    "@type": "ImageObject"
+    url: "{{ vars.logo }}"
+  contactPoint:
+    "@type": "ContactPoint"
+    email: "{{ vars.email }}"
+    contactType: "customer support"
+  sameAs:
+    - "{{ vars.social_twitter }}"
+    - "{{ vars.social_linkedin }}"

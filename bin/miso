@@ -8,6 +8,8 @@ require __DIR__ . '/../vendor/autoload.php';
 use Miso\Content\ContentLoader;
 use Miso\Content\FrontMatterParser;
 use Miso\Content\MarkdownConverter;
+use Miso\Schema\SchemaLoader;
+use Miso\Schema\SchemaRenderer;
 use Miso\Site\SiteConfig;
 use Miso\Scaffold\Scaffolder;
 use Miso\StaticSiteGenerator;
@@ -223,7 +225,9 @@ function initializeGenerator(array $options): array
         loader: new ContentLoader(new FrontMatterParser(), new MarkdownConverter()),
         filesystem: new Filesystem(),
         twig: $twig,
-        projectRoot: $projectRoot
+        projectRoot: $projectRoot,
+        schemaLoader: new SchemaLoader(),
+        schemaRenderer: new SchemaRenderer($twig),
     );
 
     return [$generator, $config, $projectRoot];

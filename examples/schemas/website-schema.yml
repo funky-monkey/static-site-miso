@@ -1,0 +1,22 @@
+# WebSite schema — establishes site identity and enables Google Sitelinks Searchbox.
+# Place this file at _config/website-schema.yml to activate it.
+# Applied to: every page.
+
+vars:
+  name: "My Site"
+  url: "https://example.com"
+  # Uncomment to enable Sitelinks Searchbox in Google results:
+  # search_url: "https://example.com/search?q={search_term_string}"
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "WebSite"
+  name: "{{ vars.name }}"
+  url: "{{ vars.url }}"
+  # Uncomment to add Sitelinks Searchbox:
+  # potentialAction:
+  #   "@type": "SearchAction"
+  #   target:
+  #     "@type": "EntryPoint"
+  #     urlTemplate: "{{ vars.search_url }}"
+  #   query-input: "required name=search_term_string"

@@ -1,0 +1,33 @@
+# Article schema — enables rich results for blog posts (headline, date, author).
+# Only injected on pages belonging to the listed collections.
+# Place this file at _config/article-schema.yml to activate it.
+# Applied to: blog collection only (change or add collection names as needed).
+
+collections:
+  - blog
+
+vars:
+  publisher_name: "My Site"
+  publisher_logo: "https://example.com/img/logo.png"
+  base_url: "https://example.com"
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "Article"
+  headline: "{{ page.title }}"
+  description: "{{ page.description ?? page.excerpt ?? '' }}"
+  url: "{{ vars.base_url }}{{ page.permalink }}"
+  datePublished: "{{ page.date|date('Y-m-d') }}"
+  dateModified: "{{ page.date|date('Y-m-d') }}"
+  author:
+    "@type": "Person"
+    name: "{{ page.author_name ?? vars.publisher_name }}"
+  publisher:
+    "@type": "Organization"
+    name: "{{ vars.publisher_name }}"
+    logo:
+      "@type": "ImageObject"
+      url: "{{ vars.publisher_logo }}"
+  mainEntityOfPage:
+    "@type": "WebPage"
+    "@id": "{{ vars.base_url }}{{ page.permalink }}"

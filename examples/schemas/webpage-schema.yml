@@ -1,0 +1,18 @@
+# WebPage schema — per-page metadata for structured data.
+# {{ page.* }} variables come from each page's front matter.
+# {{ site.* }} variables come from _config/site.yaml.
+# Place this file at _config/webpage-schema.yml to activate it.
+# Applied to: every page.
+
+vars: {}
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "WebPage"
+  name: "{{ page.title ?? site.title }}"
+  description: "{{ page.description ?? page.excerpt ?? site.description }}"
+  url: "{{ site.base_url }}{{ page.permalink }}"
+  inLanguage: "en"
+  isPartOf:
+    "@type": "WebSite"
+    url: "{{ site.base_url }}"
