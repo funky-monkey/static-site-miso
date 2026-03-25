@@ -117,11 +117,12 @@ function runServe(array $arguments, array $options): void
     }
 
     echo "Watching for changes...\n";
-    $watchedExtensions = ['md', 'markdown', 'html', 'twig.html', 'css'];
+    $watchedExtensions = ['md', 'markdown', 'html', 'twig.html', 'css', 'yaml'];
     $watchedDirs = [
         $projectRoot . DIRECTORY_SEPARATOR . $config->path('content'),
         $projectRoot . DIRECTORY_SEPARATOR . $config->path('templates'),
         $projectRoot . DIRECTORY_SEPARATOR . 'css',
+        $projectRoot . DIRECTORY_SEPARATOR . '_config',
     ];
 
     $lastHashes = hashWatchedFiles($watchedDirs, $watchedExtensions);
@@ -137,6 +138,7 @@ function runServe(array $arguments, array $options): void
             $lastHashes = $hash;
             echo "[" . date('H:i:s') . "] Changes detected. Rebuilding...\n";
             try {
+                [$generator] = initializeGenerator($options);
                 $generator->build();
                 echo "[" . date('H:i:s') . "] Build complete.\n";
             } catch (\Throwable $e) {
