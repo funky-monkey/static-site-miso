@@ -1,5 +1,5 @@
 {
-    "name": "funky-monkey/miso-static-site-generator",
+    "name": "funky-monkey/static-site-miso",
     "description": "Lightweight PHP static site generator with Twig templates, Markdown sources, collections, and pagination.",
     "type": "library",
     "require": {
