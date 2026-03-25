@@ -137,6 +137,15 @@ miso build
 
 This clears `_site/`, renders pages into HTML, generates paginated collection listings, and copies asset directories.
 
+Pass optional flags to generate additional output files:
+
+```bash
+miso build --sitemap   # generate sitemap.xml
+miso build --robots    # generate robots.txt
+miso build --llms      # generate llms.txt
+miso build --sitemap --robots --llms  # all three together
+```
+
 Override defaults when needed:
 
 ```bash
@@ -166,6 +175,7 @@ With `--watch` enabled, Miso polls for changes every 0.5 seconds across the foll
 | `content/` | `.md`, `.markdown` |
 | `templates/` | `.html`, `.twig.html` |
 | `css/` | `.css` |
+| `_config/` | `.yaml` |
 
 When a change is detected, the full site is rebuilt in place and the running PHP server picks up the new files immediately. A timestamp is printed for each rebuild cycle:
 
@@ -175,6 +185,20 @@ When a change is detected, the full site is rebuilt in place and the running PHP
 ```
 
 > **Note:** `--watch` uses polling, not filesystem events, so it works across all platforms and network file systems without any additional dependencies. There is no browser live-reload; refresh the page manually after a rebuild.
+
+The `--sitemap`, `--robots`, and `--llms` flags also work with `miso run` and `miso run --watch`:
+
+```bash
+miso run --watch --sitemap --robots --llms
+```
+
+### Generated Files
+
+| Flag | Output file | Description |
+| --- | --- | --- |
+| `--sitemap` | `_site/sitemap.xml` | Standard XML sitemap (sitemaps.org spec). Includes all rendered pages with `<loc>` and, when available, `<lastmod>` from front matter `date`. Requires `site.base_url` in `_config/site.yaml`. |
+| `--robots` | `_site/robots.txt` | Robots exclusion file (`User-agent: * / Allow: /`). Appends a `Sitemap:` directive when `site.base_url` is set. |
+| `--llms` | `_site/llms.txt` | Plain-text site index in [llmstxt.org](https://llmstxt.org) format. Lists all pages grouped by collection with titles, URLs, and descriptions. |
 
 ### Liquid → Twig Quick Guide
 

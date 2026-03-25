@@ -21,21 +21,35 @@ class StaticSiteGenerator
     ) {
     }
 
-    public function build(): void
+    /**
+     * @param array{sitemap?: bool, robots?: bool, llms?: bool} $flags
+     */
+    public function build(array $flags = []): void
     {
         $outputDir = $this->absolutePath($this->config->path('output'));
         $this->filesystem->ensureDirectory($outputDir);
         $this->filesystem->emptyDirectory($outputDir);
 
+        $pages = [];
         $collections = $this->loader->load($this->projectRoot, $this->config);
 
         foreach ($collections as $collection) {
             $this->sortCollection($collection);
-            $this->renderCollectionItems($collection, $outputDir);
-            $this->renderCollectionListing($collection, $outputDir);
+            $pages = array_merge($pages, $this->renderCollectionItems($collection, $outputDir));
+            $pages = array_merge($pages, $this->renderCollectionListing($collection, $outputDir));
         }
 
         $this->copyAssets($outputDir);
+
+        if ($flags['sitemap'] ?? false) {
+            $this->generateSitemap($outputDir, $pages);
+        }
+        if ($flags['robots'] ?? false) {
+            $this->generateRobots($outputDir);
+        }
+        if ($flags['llms'] ?? false) {
+            $this->generateLlmsTxt($outputDir, $pages);
+        }
     }
 
     private function sortCollection(Collection $collection): void
@@ -52,12 +66,16 @@ class StaticSiteGenerator
         });
     }
 
-    private function renderCollectionItems(Collection $collection, string $outputDir): void
+    /**
+     * @return list<array{permalink: string, title: string, description: string, date: ?\DateTimeImmutable, collection: string, type: string}>
+     */
+    private function renderCollectionItems(Collection $collection, string $outputDir): array
     {
         $siteMeta = $this->config->get('site', []);
         $itemLayout = $collection->itemLayout() ?? ($collection->name === 'pages' ? 'page.twig.html' : 'collection-item.twig.html');
 
         $menus = $this->config->menus();
+        $pages = [];
 
         foreach ($collection as $document) {
             $layout = $document->frontMatter['layout'] ?? $itemLayout;
@@ -88,14 +106,30 @@ class StaticSiteGenerator
             $path = $this->destinationPathFromPermalink($outputDir, $permalink, $document->slug === 'index' && $collection->name === 'pages');
 
             $this->filesystem->writeFile($path, $html);
+
+            $pages[] = [
+                'permalink'   => $permalink,
+                'title'       => (string) ($document->frontMatter['title'] ?? $document->slug),
+                'description' => (string) ($document->frontMatter['excerpt'] ?? $document->frontMatter['description'] ?? $document->frontMatter['meta_description'] ?? ''),
+                'date'        => $document->date,
+                'collection'  => $collection->name,
+                'type'        => 'item',
+            ];
         }
+
+        return $pages;
     }
 
-    private function renderCollectionListing(Collection $collection, string $outputDir): void
+    /**
+     * @return list<array{permalink: string, title: string, description: string, date: ?\\DateTimeImmutable, collection: string, type: string}>
+     */
+    private function renderCollectionListing(Collection $collection, string $outputDir): array
     {
         if ($collection->name === 'pages') {
-            return;
+            return [];
         }
+
+        $listingPages = [];
 
         $listingLayout = $collection->listingLayout() ?? 'collection.twig.html';
         $siteMeta = $this->config->get('site', []);
@@ -142,7 +176,87 @@ class StaticSiteGenerator
             $path = $this->destinationPathFromPermalink($outputDir, $permalink, false);
 
             $this->filesystem->writeFile($path, $html);
+
+            $listingPages[] = [
+                'permalink'   => $permalink,
+                'title'       => (string) ($collection->config['title'] ?? $collection->name),
+                'description' => '',
+                'date'        => null,
+                'collection'  => $collection->name,
+                'type'        => 'listing',
+            ];
         }
+
+        return $listingPages;
+    }
+
+    /**
+     * @param list<array{permalink: string, title: string, description: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
+     */
+    private function generateSitemap(string $outputDir, array $pages): void
+    {
+        $baseUrl = rtrim((string) ($this->config->get('site.base_url') ?? ''), '/');
+        $lines = ['<?xml version="1.0" encoding="UTF-8"?>'];
+        $lines[] = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">';
+
+        foreach ($pages as $page) {
+            $loc = $baseUrl . '/' . ltrim($page['permalink'], '/');
+            $lines[] = '  <url>';
+            $lines[] = '    <loc>' . htmlspecialchars($loc, ENT_XML1) . '</loc>';
+            if ($page['date'] !== null) {
+                $lines[] = '    <lastmod>' . $page['date']->format('Y-m-d') . '</lastmod>';
+            }
+            $lines[] = '  </url>';
+        }
+
+        $lines[] = '</urlset>';
+        $this->filesystem->writeFile($outputDir . DIRECTORY_SEPARATOR . 'sitemap.xml', implode("\n", $lines) . "\n");
+    }
+
+    private function generateRobots(string $outputDir): void
+    {
+        $baseUrl = rtrim((string) ($this->config->get('site.base_url') ?? ''), '/');
+        $content = "User-agent: *\nAllow: /\n";
+        if ($baseUrl !== '') {
+            $content .= "\nSitemap: {$baseUrl}/sitemap.xml\n";
+        }
+        $this->filesystem->writeFile($outputDir . DIRECTORY_SEPARATOR . 'robots.txt', $content);
+    }
+
+    /**
+     * @param list<array{permalink: string, title: string, description: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
+     */
+    private function generateLlmsTxt(string $outputDir, array $pages): void
+    {
+        $site = $this->config->get('site', []);
+        $title = (string) ($site['title'] ?? 'Site');
+        $description = (string) ($site['description'] ?? '');
+        $baseUrl = rtrim((string) ($site['base_url'] ?? ''), '/');
+
+        $lines = ["# {$title}"];
+        if ($description !== '') {
+            $lines[] = '';
+            $lines[] = "> {$description}";
+        }
+        $lines[] = '';
+
+        $byCollection = [];
+        foreach ($pages as $page) {
+            $byCollection[$page['collection']][] = $page;
+        }
+
+        foreach ($byCollection as $collectionName => $collectionPages) {
+            $lines[] = '## ' . ucfirst($collectionName);
+            $lines[] = '';
+            foreach ($collectionPages as $page) {
+                $url = $baseUrl . '/' . ltrim($page['permalink'], '/');
+                $desc = $page['description'] !== '' ? ': ' . $page['description'] : '';
+                $lines[] = "- [{$page['title']}]({$url}){$desc}";
+            }
+            $lines[] = '';
+        }
+
+        $this->filesystem->writeFile($outputDir . DIRECTORY_SEPARATOR . 'llms.txt', implode("\n", $lines));
     }
 
     private function copyAssets(string $outputDir): void

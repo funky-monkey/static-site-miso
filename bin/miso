@@ -64,10 +64,22 @@ Options:
   --host=HOST        Host for built-in server (default 127.0.0.1) [run]
   --port=PORT        Port for built-in server (default 8000) [run]
   --watch            Rebuild automatically when content/templates/css change [run]
+  --sitemap          Generate sitemap.xml in the output directory [build, run]
+  --robots           Generate robots.txt in the output directory [build, run]
+  --llms             Generate llms.txt in the output directory [build, run]
 
 HELP;
         echo COPYRIGHT . PHP_EOL;
         exit(0);
+}
+
+function buildFlags(array $options): array
+{
+    return [
+        'sitemap' => isset($options['sitemap']),
+        'robots'  => isset($options['robots']),
+        'llms'    => isset($options['llms']),
+    ];
 }
 
 function runBuild(array $arguments, array $options): void
@@ -75,7 +87,7 @@ function runBuild(array $arguments, array $options): void
     [$generator] = initializeGenerator($options);
 
     try {
-        $generator->build();
+        $generator->build(buildFlags($options));
         echo "Build complete.\n";
         echo COPYRIGHT . PHP_EOL;
     } catch (\Throwable $e) {
@@ -90,8 +102,10 @@ function runServe(array $arguments, array $options): void
 
     [$generator, $config, $projectRoot] = initializeGenerator($options);
 
+    $flags = buildFlags($options);
+
     try {
-        $generator->build();
+        $generator->build($flags);
         echo "Build complete.\n";
     } catch (\Throwable $e) {
         fwrite(STDERR, 'Build failed: ' . $e->getMessage() . PHP_EOL);
@@ -139,7 +153,7 @@ function runServe(array $arguments, array $options): void
             echo "[" . date('H:i:s') . "] Changes detected. Rebuilding...\n";
             try {
                 [$generator] = initializeGenerator($options);
-                $generator->build();
+                $generator->build($flags);
                 echo "[" . date('H:i:s') . "] Build complete.\n";
             } catch (\Throwable $e) {
                 fwrite(STDERR, "[" . date('H:i:s') . "] Build failed: " . $e->getMessage() . PHP_EOL);
