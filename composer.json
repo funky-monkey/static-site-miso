@@ -2,6 +2,7 @@
     "name": "funky-monkey/static-site-miso",
     "description": "Lightweight PHP static site generator with Twig templates, Markdown sources, collections, and pagination.",
     "type": "library",
+    "license": "MIT",
     "require": {
         "php": "^8.2",
         "twig/twig": "^3.10",
