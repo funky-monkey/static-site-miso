@@ -1,7 +1,7 @@
 {
     "name": "miso/static-site-generator",
     "description": "Lightweight PHP static site generator with Twig templates, Markdown sources, collections, and pagination.",
-    "type": "project",
+    "type": "library",
     "require": {
         "php": "^8.2",
         "twig/twig": "^3.10",
