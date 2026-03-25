@@ -61,6 +61,11 @@
         <meta name="twitter:image" content="{{ twitter.image ?? og.image ?? site.seo.social_image }}">
     {% endif %}
     <link rel="stylesheet" href="/css/main.css">
+    {% if schemas is defined and schemas|length %}
+        {% for schema in schemas %}
+            <script type="application/ld+json">{{ schema|raw }}</script>
+        {% endfor %}
+    {% endif %}
 </head>
 <body>
 <header>
