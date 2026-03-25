@@ -9,6 +9,10 @@ This is a PHP-based static site generator inspired by HydePHP and Jekyll. It com
 - Twig layouts and partials (drop-in replacements for Liquid templates)
 - Collection support with configurable pagination and permalinks
 - Asset directory copying (defaults to `css/`)
+- Built-in preview server (`miso run`) with optional `--watch` flag that polls for changes and rebuilds automatically — no extra dependencies required
+- `--sitemap` — generates a `sitemap.xml` following the sitemaps.org spec, with `<loc>` and `<lastmod>` for every rendered page
+- `--robots` — generates a `robots.txt` with a `Sitemap:` directive pointing to your sitemap
+- `--llms` — generates a `llms.txt` in the [llmstxt.org](https://llmstxt.org) format, a plain-text index of all pages grouped by collection for LLM consumption
 - Single PHP CLI (`miso`) that you can install locally or globally
 
 ### Installation
