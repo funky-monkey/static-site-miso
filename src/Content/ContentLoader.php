@@ -105,8 +105,22 @@ class ContentLoader
     private function resolveDate(array $frontMatter, string $relativePath): ?\DateTimeImmutable
     {
         if (isset($frontMatter['date'])) {
+            $value = $frontMatter['date'];
+
             try {
-                return new \DateTimeImmutable((string)$frontMatter['date']);
+                if ($value instanceof \DateTimeImmutable) {
+                    return $value;
+                }
+
+                if ($value instanceof \DateTimeInterface) {
+                    return \DateTimeImmutable::createFromInterface($value);
+                }
+
+                if (is_int($value) || (is_string($value) && ctype_digit(trim($value)))) {
+                    return (new \DateTimeImmutable())->setTimestamp((int)$value);
+                }
+
+                return new \DateTimeImmutable((string)$value);
             } catch (\Exception) {
                 // Ignore invalid date formats; fall back to filename pattern
             }
