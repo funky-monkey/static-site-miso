@@ -22,10 +22,40 @@ This is a PHP-based static site generator inspired by HydePHP and Jekyll. It com
 - PHP 8.2+ with the `intl` extension enabled
 - Composer
 
-**Project-local install**
+**Global CLI install via Packagist (recommended)**
+
+Install Miso globally so the `miso` command is available everywhere on your machine:
 
 ```bash
-# Clone or copy this repository, then from the project root:
+composer global require funky-monkey/static-site-miso
+```
+
+Ensure Composer’s global bin directory is on your `PATH` (typically `~/.composer/vendor/bin` or `~/Library/Application Support/composer/vendor/bin` on macOS):
+
+```bash
+export PATH="$HOME/.composer/vendor/bin:$PATH"
+```
+
+Add the line above to your shell profile (for example `~/.zshrc`) so it persists.
+
+You can now run `miso build` from any project. Use `miso --help` to see all available options.
+
+To update to the latest version:
+
+```bash
+composer global update funky-monkey/static-site-miso
+```
+
+To uninstall:
+
+```bash
+composer global remove funky-monkey/static-site-miso
+```
+
+**Project-local install (from source)**
+
+```bash
+# Clone the repository, then from the project root:
 composer install
 
 # Build the demo site
@@ -33,34 +63,6 @@ php bin/miso build
 ```
 
 The generated HTML will appear in `_site/`. Open `_site/index.html` in your browser to preview.
-
-**Global CLI install (macOS-friendly)**
-
-1. From the project root, run:
-
-   ```bash
-   composer global config repositories.miso path "$(pwd)"
-   composer global require funky-monkey/static-site-miso:dev-main
-   ```
-
-   This tells Composer to install the local project into your global Composer directories, exposing the `miso` executable.
-
-2. Ensure Composer’s global bin directory is on your `PATH` (typically `~/.composer/vendor/bin` or `~/Library/Application Support/composer/vendor/bin` on macOS):
-
-   ```bash
-   export PATH="$HOME/.composer/vendor/bin:$PATH"
-   ```
-
-   Add the line above to your shell profile (for example `~/.zshrc`) so it persists.
-
-3. You can now run `miso build` from any project that follows the expected layout. Use `miso --help` to see available options.
-
-To uninstall later:
-
-```bash
-composer global remove funky-monkey/static-site-miso
-composer global config --unset repositories.miso
-```
 
 ### Project Layout
 
