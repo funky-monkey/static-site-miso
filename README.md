@@ -151,6 +151,31 @@ miso run
 miso run --port=9000 --host=0.0.0.0
 ```
 
+Add `--watch` to automatically rebuild whenever source files change:
+
+```bash
+miso run --watch
+# combine with port/host as needed
+miso run --watch --port=9000 --host=0.0.0.0
+```
+
+With `--watch` enabled, Miso polls for changes every 0.5 seconds across the following directories:
+
+| Directory | File types watched |
+| --- | --- |
+| `content/` | `.md`, `.markdown` |
+| `templates/` | `.html`, `.twig.html` |
+| `css/` | `.css` |
+
+When a change is detected, the full site is rebuilt in place and the running PHP server picks up the new files immediately. A timestamp is printed for each rebuild cycle:
+
+```
+[14:23:01] Changes detected. Rebuilding...
+[14:23:01] Build complete.
+```
+
+> **Note:** `--watch` uses polling, not filesystem events, so it works across all platforms and network file systems without any additional dependencies. There is no browser live-reload; refresh the page manually after a rebuild.
+
 ### Liquid → Twig Quick Guide
 
 | Liquid Pattern | Twig Equivalent |
@@ -191,4 +216,4 @@ miso run --port=9000 --host=0.0.0.0
 
 - Register Twig filters/functions to mimic Liquid tags you depend on.
 - Implement extra build tasks (RSS feeds, sitemaps, search indexes).
-- Extend the CLI with commands like `miso new`, `miso serve`, or watch mode if you need them.
+- Extend the CLI with additional commands or build hooks as your project grows.
