@@ -36,7 +36,7 @@ The generated HTML will appear in `_site/`. Open `_site/index.html` in your brow
 
    ```bash
    composer global config repositories.miso path "$(pwd)"
-   composer global require miso/static-site-generator:dev-main
+   composer global require funky-monkey/miso-static-site-generator:dev-main
    ```
 
    This tells Composer to install the local project into your global Composer directories, exposing the `miso` executable.
@@ -54,7 +54,7 @@ The generated HTML will appear in `_site/`. Open `_site/index.html` in your brow
 To uninstall later:
 
 ```bash
-composer global remove miso/static-site-generator
+composer global remove funky-monkey/miso-static-site-generator
 composer global config --unset repositories.miso
 ```
 
