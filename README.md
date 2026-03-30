@@ -310,6 +310,39 @@ schema:
 6. Replace shortcodes/partials with Twig includes or custom filters. Any Hugo-specific Markdown shortcodes will need manual conversion.
 7. Run `miso build` and `miso run` iteratively to confirm the pages match the original Hugo output.
 
+### Claude Skill — miso-convert
+
+Miso ships with a **Claude Code skill** that converts any existing static HTML website into a Miso project automatically.
+
+**What it does**
+
+Given a folder of static HTML files, the skill:
+
+1. Inventories all pages and classifies them (prose vs. rich layout, collections, standalone pages)
+2. Extracts the shared nav and footer into `base.twig.html`
+3. Creates the right Twig templates (`full-page.twig.html` for hero/grid pages, `page.twig.html` for prose, dedicated templates for collections)
+4. Converts each page body into a `.md` content file with YAML frontmatter
+5. Generates `_config/site.yaml` with collection definitions
+6. Reports what was created and any manual fixes needed
+
+**Installation**
+
+Copy the skill into your Claude skills directory:
+
+```bash
+cp -r skills/miso-convert ~/.claude/skills/miso-convert
+```
+
+Once installed, trigger it in any Claude Code session by asking Claude to convert a site:
+
+> "Convert the HTML site at `path/to/source/` into a Miso project at `path/to/dest/`"
+
+Claude will ask a few quick questions about your tech stack (CSS framework, JS approach, naming conventions) and then work through the full conversion systematically.
+
+The skill file lives at `skills/miso-convert/SKILL.md` and can be customised for your own conventions.
+
+---
+
 ### Next steps
 
 - Register Twig filters/functions to mimic Liquid tags you depend on.
