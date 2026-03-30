@@ -26,7 +26,7 @@ class StaticSiteGenerator
     }
 
     /**
-     * @param array{sitemap?: bool, robots?: bool, llms?: bool} $flags
+     * @param array{sitemap?: bool, robots?: bool, llms?: bool, rss?: bool} $flags
      */
     public function build(array $flags = []): void
     {
@@ -56,6 +56,9 @@ class StaticSiteGenerator
         }
         if ($flags['llms'] ?? false) {
             $this->generateLlmsTxt($outputDir, $pages);
+        }
+        if ($flags['rss'] ?? false) {
+            $this->generateRss($outputDir, $pages);
         }
     }
 
@@ -272,6 +275,64 @@ class StaticSiteGenerator
         }
 
         $this->filesystem->writeFile($outputDir . DIRECTORY_SEPARATOR . 'llms.txt', implode("\n", $lines));
+    }
+
+    /**
+     * Generate an RSS 2.0 feed from all dated collection items.
+     * Validates against https://validator.w3.org/feed/
+     *
+     * @param list<array{permalink: string, title: string, description: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
+     */
+    private function generateRss(string $outputDir, array $pages): void
+    {
+        $site    = $this->config->get('site', []);
+        $title   = htmlspecialchars((string) ($site['title'] ?? 'Feed'), ENT_XML1);
+        $baseUrl = rtrim((string) ($site['base_url'] ?? ''), '/');
+        $desc    = htmlspecialchars((string) ($site['description'] ?? $title), ENT_XML1);
+        $feedUrl = $baseUrl . '/feed.xml';
+
+        // Only dated collection items (not listing pages, not the 'pages' collection)
+        $items = array_filter(
+            $pages,
+            fn ($p) => $p['type'] === 'item' && $p['collection'] !== 'pages' && $p['date'] !== null
+        );
+
+        // Newest first
+        usort($items, fn ($a, $b) => $b['date']->getTimestamp() <=> $a['date']->getTimestamp());
+
+        $lastBuild = (new \DateTimeImmutable())->format(\DateTimeInterface::RSS);
+
+        $lines = [
+            '<?xml version="1.0" encoding="UTF-8"?>',
+            '<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">',
+            '  <channel>',
+            "    <title>{$title}</title>",
+            '    <link>' . htmlspecialchars($baseUrl ?: '/', ENT_XML1) . '</link>',
+            "    <description>{$desc}</description>",
+            '    <language>en</language>',
+            "    <lastBuildDate>{$lastBuild}</lastBuildDate>",
+            '    <atom:link href="' . htmlspecialchars($feedUrl, ENT_XML1) . '" rel="self" type="application/rss+xml"/>',
+        ];
+
+        foreach ($items as $page) {
+            $link    = $baseUrl . '/' . ltrim($page['permalink'], '/');
+            $pubDate = $page['date']->format(\DateTimeInterface::RSS);
+            $itemTitle = htmlspecialchars($page['title'], ENT_XML1);
+            $itemDesc  = '<![CDATA[' . $page['description'] . ']]>';
+
+            $lines[] = '    <item>';
+            $lines[] = "      <title>{$itemTitle}</title>";
+            $lines[] = '      <link>' . htmlspecialchars($link, ENT_XML1) . '</link>';
+            $lines[] = "      <description>{$itemDesc}</description>";
+            $lines[] = "      <pubDate>{$pubDate}</pubDate>";
+            $lines[] = '      <guid isPermaLink="true">' . htmlspecialchars($link, ENT_XML1) . '</guid>';
+            $lines[] = '    </item>';
+        }
+
+        $lines[] = '  </channel>';
+        $lines[] = '</rss>';
+
+        $this->filesystem->writeFile($outputDir . DIRECTORY_SEPARATOR . 'feed.xml', implode("\n", $lines) . "\n");
     }
 
     private function copyAssets(string $outputDir): void

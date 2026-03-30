@@ -71,6 +71,7 @@ Options:
   --sitemap          Generate sitemap.xml in the output directory [build, run]
   --robots           Generate robots.txt in the output directory [build, run]
   --llms             Generate llms.txt in the output directory [build, run]
+  --rss              Generate feed.xml (RSS 2.0) in the output directory [build, run]
 
 HELP;
         echo COPYRIGHT . PHP_EOL;
@@ -83,6 +84,7 @@ function buildFlags(array $options): array
         'sitemap' => isset($options['sitemap']),
         'robots'  => isset($options['robots']),
         'llms'    => isset($options['llms']),
+        'rss'     => isset($options['rss']),
     ];
 }
 

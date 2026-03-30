@@ -13,6 +13,6 @@
 ## Open issues (see GitHub)
 
 - [ ] #2 — Custom Twig filters (covered by plugin system above)
-- [ ] #3 — RSS feed generation (`--rss` flag)
+- [x] #3 — RSS feed generation (`--rss` flag)
 - [ ] #4 — Search index generation (`--search` flag)
 - [ ] #5 — Build hooks / lifecycle callbacks

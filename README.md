@@ -150,7 +150,8 @@ Pass optional flags to generate additional output files:
 miso build --sitemap   # generate sitemap.xml
 miso build --robots    # generate robots.txt
 miso build --llms      # generate llms.txt
-miso build --sitemap --robots --llms  # all three together
+miso build --rss       # generate feed.xml (RSS 2.0)
+miso build --sitemap --robots --llms --rss  # all four together
 ```
 
 Override defaults when needed:
@@ -196,7 +197,7 @@ When a change is detected, the full site is rebuilt in place and the running PHP
 The `--sitemap`, `--robots`, and `--llms` flags also work with `miso run` and `miso run --watch`:
 
 ```bash
-miso run --watch --sitemap --robots --llms
+miso run --watch --sitemap --robots --llms --rss
 ```
 
 ### Generated Files
@@ -206,6 +207,7 @@ miso run --watch --sitemap --robots --llms
 | `--sitemap` | `_site/sitemap.xml` | Standard XML sitemap (sitemaps.org spec). Includes all rendered pages with `<loc>` and, when available, `<lastmod>` from front matter `date`. Requires `site.base_url` in `_config/site.yaml`. |
 | `--robots` | `_site/robots.txt` | Robots exclusion file (`User-agent: * / Allow: /`). Appends a `Sitemap:` directive when `site.base_url` is set. |
 | `--llms` | `_site/llms.txt` | Plain-text site index in [llmstxt.org](https://llmstxt.org) format. Lists all pages grouped by collection with titles, URLs, and descriptions. |
+| `--rss` | `_site/feed.xml` | RSS 2.0 feed of all dated collection items, newest first. Validates against the W3C Feed Validator. Requires `site.base_url` in `_config/site.yaml`. |
 
 ### Schema.org Structured Data
 
