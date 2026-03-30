@@ -312,38 +312,88 @@ schema:
 
 ### Twig Filters
 
-Miso ships 20 built-in Twig filters covering the most common static-site needs:
+Miso ships 20 built-in Twig filters. Full reference below.
 
-| Category | Filters |
-| --- | --- |
-| String | `slugify`, `truncate_words`, `strip_html`, `widont`, `titlecase`, `encode_email` |
-| Content | `reading_time`, `excerpt`, `markdown` |
-| Date | `date_format`, `ago` |
-| URL | `relative_url`, `absolute_url`, `cache_bust` |
-| Number | `number_format`, `pluralize` |
-| Collection | `where`, `sort_by`, `limit`, `group_by` |
+#### String filters
+
+| Filter | Signature | Description |
+| --- | --- | --- |
+| `slugify` | `string` | Convert to a URL-safe slug. `"Hello World!"` → `"hello-world"` |
+| `truncate_words` | `string, words=20, ellipsis='…'` | Trim to N words. Strips HTML before counting. |
+| `strip_html` | `string` | Remove all HTML tags, leaving plain text. |
+| `widont` | `string` | Replace the last space with `&nbsp;` to prevent a single-word orphan on its own line. |
+| `titlecase` | `string` | Title Case, with common minor words (`a`, `the`, `and`, …) kept lowercase unless first or last. |
+| `encode_email` | `string` | HTML-entity-encode every character to deter email scrapers. Renders correctly in browsers. |
+
+#### Content filters
+
+| Filter | Signature | Description |
+| --- | --- | --- |
+| `reading_time` | `string, wpm=200` | Estimate reading time. `"4 min read"` |
+| `excerpt` | `string, sentences=1` | Extract the first N sentences, tags stripped. |
+| `markdown` | `string` | Render an inline Markdown string to HTML. Useful for frontmatter fields that contain Markdown. |
+
+#### Date filters
+
+| Filter | Signature | Description |
+| --- | --- | --- |
+| `date_format` | `date, format` | Format a date. Accepts strftime-style `%B %d %Y` **and** PHP `F d Y` codes interchangeably — familiar if you're coming from Jekyll/Liquid. |
+| `ago` | `date` | Human-readable relative time. `"3 days ago"`, `"2 months ago"`, `"just now"` |
+
+#### URL filters
+
+| Filter | Signature | Description |
+| --- | --- | --- |
+| `relative_url` | `string` | Prepend `site.base_url`. Leaves already-absolute URLs untouched. |
+| `absolute_url` | `string` | Alias of `relative_url` — ensures a full `https://` URL. |
+| `cache_bust` | `string` | Append `?v=<8-char hash>` derived from the file's contents. Falls back to the original path if the file doesn't exist. |
+
+#### Number filters
+
+| Filter | Signature | Description |
+| --- | --- | --- |
+| `number_format` | `number, decimals=0, dec='.', sep=','` | Format with thousands separators. `14999` → `"14,999"` |
+| `pluralize` | `count, singular, plural=''` | Prepend count and choose the correct form. `{{ 3 \| pluralize("post") }}` → `"3 posts"` |
+
+#### Collection filters
+
+These filters work on any array of pages or items and are designed to be chained.
+
+| Filter | Signature | Description |
+| --- | --- | --- |
+| `where` | `array, field, value` | Keep only items where a frontmatter field equals a value. |
+| `sort_by` | `array, field, direction='asc'` | Sort by a frontmatter field. Use `'desc'` for newest-first. |
+| `limit` | `array, count` | Return the first N items. |
+| `group_by` | `array, field` | Return an associative array keyed by a frontmatter field value. |
 
 **Examples**
 
 ```twig
-{# URL-safe slug #}
+{# Slug from a title #}
 {{ post.title | slugify }}
 
-{# Show first 25 words of a post #}
+{# Card teaser — 25 words, no HTML #}
 {{ post.content | strip_html | truncate_words(25) }}
 
-{# Jekyll-style date formatting — % codes work alongside PHP date() codes #}
+{# Jekyll-style date — % codes and PHP date codes both work #}
 {{ post.date | date_format("%B %d, %Y") }}
+{{ post.date | date_format("F j, Y") }}
 
 {# Relative time #}
 {{ post.date | ago }}
 
-{# Cache-bust an asset — appends ?v=<hash> based on file contents #}
+{# Cache-bust a stylesheet #}
 <link rel="stylesheet" href="{{ "/css/main.css" | cache_bust }}">
 
-{# Filter + sort + limit a collection #}
+{# Latest 3 news posts, newest first #}
 {% for post in collections.blog | where("category", "news") | sort_by("date", "desc") | limit(3) %}
-  ...
+  <a href="/blog/{{ post.slug }}/">{{ post.title }}</a>
+{% endfor %}
+
+{# Group posts by category #}
+{% for category, posts in collections.blog | group_by("category") %}
+  <h2>{{ category | titlecase }}</h2>
+  {% for post in posts %}...{% endfor %}
 {% endfor %}
 ```
 
@@ -373,6 +423,8 @@ Then use it in any template:
 ```
 
 `_plugins/` is watched by `miso run --watch` — saving a plugin file triggers a rebuild. The skeleton project (`miso new`) includes an annotated `_plugins/example.php` to get you started.
+
+You can also add Twig functions and tests the same way — see the [Twig extension docs](https://twig.symfony.com/doc/3.x/advanced.html) for `getFunctions()` and `getTests()`.
 
 ---
 
