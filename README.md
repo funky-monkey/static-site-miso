@@ -310,6 +310,72 @@ schema:
 6. Replace shortcodes/partials with Twig includes or custom filters. Any Hugo-specific Markdown shortcodes will need manual conversion.
 7. Run `miso build` and `miso run` iteratively to confirm the pages match the original Hugo output.
 
+### Twig Filters
+
+Miso ships 20 built-in Twig filters covering the most common static-site needs:
+
+| Category | Filters |
+| --- | --- |
+| String | `slugify`, `truncate_words`, `strip_html`, `widont`, `titlecase`, `encode_email` |
+| Content | `reading_time`, `excerpt`, `markdown` |
+| Date | `date_format`, `ago` |
+| URL | `relative_url`, `absolute_url`, `cache_bust` |
+| Number | `number_format`, `pluralize` |
+| Collection | `where`, `sort_by`, `limit`, `group_by` |
+
+**Examples**
+
+```twig
+{# URL-safe slug #}
+{{ post.title | slugify }}
+
+{# Show first 25 words of a post #}
+{{ post.content | strip_html | truncate_words(25) }}
+
+{# Jekyll-style date formatting — % codes work alongside PHP date() codes #}
+{{ post.date | date_format("%B %d, %Y") }}
+
+{# Relative time #}
+{{ post.date | ago }}
+
+{# Cache-bust an asset — appends ?v=<hash> based on file contents #}
+<link rel="stylesheet" href="{{ "/css/main.css" | cache_bust }}">
+
+{# Filter + sort + limit a collection #}
+{% for post in collections.blog | where("category", "news") | sort_by("date", "desc") | limit(3) %}
+  ...
+{% endfor %}
+```
+
+### Plugins
+
+Extend Miso with your own Twig filters, functions, or tests by dropping a PHP file in `_plugins/` at your project root. Any file that returns a `Twig\Extension\AbstractExtension` instance is loaded automatically — no config, no registration step.
+
+```php
+<?php
+// _plugins/my-filters.php
+use Twig\Extension\AbstractExtension;
+use Twig\TwigFilter;
+
+return new class extends AbstractExtension {
+    public function getFilters(): array {
+        return [
+            new TwigFilter('shout', fn(string $v) => strtoupper($v) . '!!!'),
+        ];
+    }
+};
+```
+
+Then use it in any template:
+
+```twig
+{{ page.title | shout }}
+```
+
+`_plugins/` is watched by `miso run --watch` — saving a plugin file triggers a rebuild. The skeleton project (`miso new`) includes an annotated `_plugins/example.php` to get you started.
+
+---
+
 ### Claude Skill — miso-convert
 
 Miso ships with a **Claude Code skill** that converts any existing static HTML website into a Miso project automatically.

@@ -14,6 +14,8 @@ use Miso\Site\SiteConfig;
 use Miso\Scaffold\Scaffolder;
 use Miso\StaticSiteGenerator;
 use Miso\Support\Filesystem;
+use Miso\Twig\CoreFiltersExtension;
+use Miso\Twig\PluginLoader;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
@@ -139,6 +141,7 @@ function runServe(array $arguments, array $options): void
         $projectRoot . DIRECTORY_SEPARATOR . $config->path('templates'),
         $projectRoot . DIRECTORY_SEPARATOR . 'css',
         $projectRoot . DIRECTORY_SEPARATOR . '_config',
+        $projectRoot . DIRECTORY_SEPARATOR . '_plugins',
     ];
 
     $lastHashes = hashWatchedFiles($watchedDirs, $watchedExtensions);
@@ -219,6 +222,11 @@ function initializeGenerator(array $options): array
         'cache' => false,
         'strict_variables' => false,
     ]);
+
+    $baseUrl = (string) $config->get('site.base_url', '');
+    $twig->addExtension(new CoreFiltersExtension($baseUrl, $projectRoot));
+
+    (new PluginLoader($projectRoot . DIRECTORY_SEPARATOR . '_plugins'))->registerPlugins($twig);
 
     $generator = new StaticSiteGenerator(
         config: $config,
