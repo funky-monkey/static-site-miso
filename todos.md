@@ -14,5 +14,5 @@
 
 - [ ] #2 — Custom Twig filters (covered by plugin system above)
 - [x] #3 — RSS feed generation (`--rss` flag)
-- [ ] #4 — Search index generation (`--search` flag)
+- [x] #4 — Search index generation (`--search` flag)
 - [ ] #5 — Build hooks / lifecycle callbacks

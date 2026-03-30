@@ -72,6 +72,7 @@ Options:
   --robots           Generate robots.txt in the output directory [build, run]
   --llms             Generate llms.txt in the output directory [build, run]
   --rss              Generate feed.xml (RSS 2.0) in the output directory [build, run]
+  --search           Generate search.json (Fuse.js / Lunr compatible) in the output directory [build, run]
 
 HELP;
         echo COPYRIGHT . PHP_EOL;
@@ -85,6 +86,7 @@ function buildFlags(array $options): array
         'robots'  => isset($options['robots']),
         'llms'    => isset($options['llms']),
         'rss'     => isset($options['rss']),
+        'search'  => isset($options['search']),
     ];
 }
 

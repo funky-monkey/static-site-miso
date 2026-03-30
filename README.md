@@ -208,6 +208,7 @@ miso run --watch --sitemap --robots --llms --rss
 | `--robots` | `_site/robots.txt` | Robots exclusion file (`User-agent: * / Allow: /`). Appends a `Sitemap:` directive when `site.base_url` is set. |
 | `--llms` | `_site/llms.txt` | Plain-text site index in [llmstxt.org](https://llmstxt.org) format. Lists all pages grouped by collection with titles, URLs, and descriptions. |
 | `--rss` | `_site/feed.xml` | RSS 2.0 feed of all dated collection items, newest first. Validates against the W3C Feed Validator. Requires `site.base_url` in `_config/site.yaml`. |
+| `--search` | `_site/search.json` | JSON search index compatible with Fuse.js and Lunr. Each entry includes `title`, `url`, `description`, `content` (HTML stripped), and `date`. |
 
 ### Further reading
 

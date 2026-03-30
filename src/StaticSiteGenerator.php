@@ -26,7 +26,7 @@ class StaticSiteGenerator
     }
 
     /**
-     * @param array{sitemap?: bool, robots?: bool, llms?: bool, rss?: bool} $flags
+     * @param array{sitemap?: bool, robots?: bool, llms?: bool, rss?: bool, search?: bool} $flags
      */
     public function build(array $flags = []): void
     {
@@ -60,6 +60,9 @@ class StaticSiteGenerator
         if ($flags['rss'] ?? false) {
             $this->generateRss($outputDir, $pages);
         }
+        if ($flags['search'] ?? false) {
+            $this->generateSearchIndex($outputDir, $pages);
+        }
     }
 
     private function sortCollection(Collection $collection): void
@@ -78,7 +81,7 @@ class StaticSiteGenerator
 
     /**
      * @param list<array{vars: array<string, mixed>, schema: array<string, mixed>, collections: ?list<string>}> $schemas
-     * @return list<array{permalink: string, title: string, description: string, date: ?\DateTimeImmutable, collection: string, type: string}>
+     * @return list<array{permalink: string, title: string, description: string, content: string, date: ?\DateTimeImmutable, collection: string, type: string}>
      */
     private function renderCollectionItems(Collection $collection, string $outputDir, array $schemas = []): array
     {
@@ -129,6 +132,7 @@ class StaticSiteGenerator
                 'permalink'   => $permalink,
                 'title'       => (string) ($document->frontMatter['title'] ?? $document->slug),
                 'description' => (string) ($document->frontMatter['excerpt'] ?? $document->frontMatter['description'] ?? $document->frontMatter['meta_description'] ?? ''),
+                'content'     => trim((string) preg_replace('/\s+/', ' ', strip_tags($document->contentHtml))),
                 'date'        => $document->date,
                 'collection'  => $collection->name,
                 'type'        => 'item',
@@ -139,7 +143,7 @@ class StaticSiteGenerator
     }
 
     /**
-     * @return list<array{permalink: string, title: string, description: string, date: ?\\DateTimeImmutable, collection: string, type: string}>
+     * @return list<array{permalink: string, title: string, description: string, content: string, date: ?\DateTimeImmutable, collection: string, type: string}>
      */
     private function renderCollectionListing(Collection $collection, string $outputDir): array
     {
@@ -199,6 +203,7 @@ class StaticSiteGenerator
                 'permalink'   => $permalink,
                 'title'       => (string) ($collection->config['title'] ?? $collection->name),
                 'description' => '',
+                'content'     => '',
                 'date'        => null,
                 'collection'  => $collection->name,
                 'type'        => 'listing',
@@ -209,7 +214,7 @@ class StaticSiteGenerator
     }
 
     /**
-     * @param list<array{permalink: string, title: string, description: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
+     * @param list<array{permalink: string, title: string, description: string, content: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
      */
     private function generateSitemap(string $outputDir, array $pages): void
     {
@@ -242,7 +247,7 @@ class StaticSiteGenerator
     }
 
     /**
-     * @param list<array{permalink: string, title: string, description: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
+     * @param list<array{permalink: string, title: string, description: string, content: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
      */
     private function generateLlmsTxt(string $outputDir, array $pages): void
     {
@@ -278,10 +283,42 @@ class StaticSiteGenerator
     }
 
     /**
+     * Generate a JSON search index for use with Fuse.js, Lunr, or similar client-side search libraries.
+     * Only includes authored collection items (not listing pages, not the 'pages' collection).
+     *
+     * @param list<array{permalink: string, title: string, description: string, content: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
+     */
+    private function generateSearchIndex(string $outputDir, array $pages): void
+    {
+        $baseUrl = rtrim((string) ($this->config->get('site.base_url') ?? ''), '/');
+
+        $items = array_values(array_filter(
+            $pages,
+            fn ($p) => $p['type'] === 'item' && $p['collection'] !== 'pages'
+        ));
+
+        $index = array_map(function ($page) use ($baseUrl) {
+            $entry = [
+                'title'       => $page['title'],
+                'url'         => $baseUrl . '/' . ltrim($page['permalink'], '/'),
+                'description' => $page['description'],
+                'content'     => $page['content'],
+            ];
+            if ($page['date'] !== null) {
+                $entry['date'] = $page['date']->format('Y-m-d');
+            }
+            return $entry;
+        }, $items);
+
+        $json = json_encode($index, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) ?: '[]';
+        $this->filesystem->writeFile($outputDir . DIRECTORY_SEPARATOR . 'search.json', $json . "\n");
+    }
+
+    /**
      * Generate an RSS 2.0 feed from all dated collection items.
      * Validates against https://validator.w3.org/feed/
      *
-     * @param list<array{permalink: string, title: string, description: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
+     * @param list<array{permalink: string, title: string, description: string, content: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
      */
     private function generateRss(string $outputDir, array $pages): void
     {
