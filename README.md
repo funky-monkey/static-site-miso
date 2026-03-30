@@ -218,4 +218,4 @@ Full documentation is available in the [wiki](https://github.com/funky-monkey/st
 - [Writing a Plugin](https://github.com/funky-monkey/static-site-miso/wiki/Writing-a-Plugin) — add custom filters, functions, and tests via `_plugins/`
 - [Schema Structured Data](https://github.com/funky-monkey/static-site-miso/wiki/Schema-Structured-Data) — JSON-LD injection via `_config/*-schema.yml`
 - [Migrating to Miso](https://github.com/funky-monkey/static-site-miso/wiki/Migrating-to-Miso) — from Jekyll or Hugo, plus Liquid → Twig syntax reference
-- [miso-convert Skill](https://github.com/funky-monkey/static-site-miso/wiki/miso-convert-Skill) — automated HTML-to-Miso conversion using Claude Code
+- [Claude Skills](https://github.com/funky-monkey/static-site-miso/wiki/Claude-Skills) — automate workflows with Claude Code (`miso-convert`, `miso-schema`)
