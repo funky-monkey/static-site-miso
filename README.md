@@ -327,10 +327,12 @@ Given a folder of static HTML files, the skill:
 
 **Installation**
 
-Copy the skill into your Claude skills directory:
+Install with a single command:
 
 ```bash
-cp -r skills/miso-convert ~/.claude/skills/miso-convert
+mkdir -p ~/.claude/skills/miso-convert && \
+  curl -sL https://raw.githubusercontent.com/funky-monkey/static-site-miso/main/skills/miso-convert/SKILL.md \
+  -o ~/.claude/skills/miso-convert/SKILL.md
 ```
 
 Once installed, trigger it in any Claude Code session by asking Claude to convert a site:
@@ -345,6 +347,7 @@ The skill file lives at `skills/miso-convert/SKILL.md` and can be customised for
 
 ### Next steps
 
-- Register Twig filters/functions to mimic Liquid tags you depend on.
-- Implement extra build tasks (RSS feeds, sitemaps, search indexes).
-- Extend the CLI with additional commands or build hooks as your project grows.
+- Register Twig filters/functions to mimic Liquid tags you depend on ([#2](https://github.com/funky-monkey/static-site-miso/issues/2)).
+- Add RSS feed generation via `--rss` flag ([#3](https://github.com/funky-monkey/static-site-miso/issues/3)).
+- Add a JSON search index via `--search` flag ([#4](https://github.com/funky-monkey/static-site-miso/issues/4)).
+- Add build hooks / lifecycle callbacks for custom per-project tasks ([#5](https://github.com/funky-monkey/static-site-miso/issues/5)).
