@@ -102,12 +102,13 @@ class StaticSiteGenerator
 
             try {
                 $html = $this->twig->render($layout, [
-                    'site' => $siteMeta,
-                    'page' => $document->frontMatter,
-                    'content' => $document->contentHtml,
+                    'site'       => $siteMeta,
+                    'page'       => $document->frontMatter,
+                    'content'    => $document->contentHtml,
                     'collection' => $collection,
-                    'menus' => $menus,
-                    'schemas' => $schemaBlocks,
+                    'menus'      => $menus,
+                    'env'        => $this->config->env(),
+                    'schemas'    => $schemaBlocks,
                 ]);
             } catch (\Twig\Error\LoaderError $e) {
                 $message = sprintf(
@@ -166,10 +167,11 @@ class StaticSiteGenerator
 
             try {
                 $html = $this->twig->render($listingLayout, [
-                    'site' => $siteMeta,
+                    'site'       => $siteMeta,
                     'collection' => $collection,
-                    'documents' => $documents,
-                    'menus' => $menus,
+                    'documents'  => $documents,
+                    'menus'      => $menus,
+                    'env'        => $this->config->env(),
                     'pagination' => [
                         'page' => $page,
                         'per_page' => $paginator->perPage(),

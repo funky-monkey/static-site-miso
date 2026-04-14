@@ -73,6 +73,7 @@ Options:
   --llms             Generate llms.txt in the output directory [build, run]
   --rss              Generate feed.xml (RSS 2.0) in the output directory [build, run]
   --search           Generate search.json (Fuse.js / Lunr compatible) in the output directory [build, run]
+  --env=NAME         Load .env.NAME from the project root for token substitution in site.yaml and menu.yaml [build, run]
 
 HELP;
         echo COPYRIGHT . PHP_EOL;
@@ -92,9 +93,8 @@ function buildFlags(array $options): array
 
 function runBuild(array $arguments, array $options): void
 {
-    [$generator] = initializeGenerator($options);
-
     try {
+        [$generator] = initializeGenerator($options);
         $generator->build(buildFlags($options));
         echo "Build complete.\n";
         echo COPYRIGHT . PHP_EOL;
@@ -108,7 +108,12 @@ function runServe(array $arguments, array $options): void
 {
     $watch = isset($options['watch']);
 
-    [$generator, $config, $projectRoot] = initializeGenerator($options);
+    try {
+        [$generator, $config, $projectRoot] = initializeGenerator($options);
+    } catch (\Throwable $e) {
+        fwrite(STDERR, 'Error: ' . $e->getMessage() . PHP_EOL);
+        exit(1);
+    }
 
     $flags = buildFlags($options);
 
@@ -212,7 +217,7 @@ function initializeGenerator(array $options): array
 
     $projectRoot = rtrim($projectRoot, DIRECTORY_SEPARATOR);
 
-    $config = SiteConfig::load($projectRoot, $options['config'] ?? null);
+    $config = SiteConfig::load($projectRoot, $options['config'] ?? null, $options['env'] ?? null);
 
     $templatesPath = $projectRoot . DIRECTORY_SEPARATOR . $config->path('templates');
 

@@ -13,14 +13,16 @@ class SiteConfig
 {
     private array $config;
     private array $menus;
+    private array $env;
 
-    private function __construct(array $config, array $menus = [])
+    private function __construct(array $config, array $menus = [], array $env = [])
     {
         $this->config = $config;
-        $this->menus = $menus;
+        $this->menus  = $menus;
+        $this->env    = $env;
     }
 
-    public static function load(string $projectRoot, ?string $configPath = null): self
+    public static function load(string $projectRoot, ?string $configPath = null, ?string $envName = null): self
     {
         $configFile = $configPath
             ? $configPath
@@ -72,7 +74,14 @@ class SiteConfig
 
         $menus = static::loadMenus($projectRoot);
 
-        return new self($config, $menus);
+        $env = static::resolveEnv($projectRoot, $envName);
+
+        if (!empty($env)) {
+            $config = static::substituteTokens($config, $env);
+            $menus  = static::substituteTokens($menus, $env);
+        }
+
+        return new self($config, $menus, $env);
     }
 
     public function get(string $key, mixed $default = null): mixed
@@ -102,6 +111,14 @@ class SiteConfig
     public function menus(): array
     {
         return $this->menus;
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public function env(): array
+    {
+        return $this->env;
     }
 
     public function path(string $key): string
@@ -150,6 +167,54 @@ class SiteConfig
         }
 
         return $defaults;
+    }
+
+    /**
+     * Load env vars from .env.<name> (or plain .env as fallback).
+     * Hard-fails if an explicit name is given but the file is missing.
+     *
+     * @return array<string, string>
+     */
+    private static function resolveEnv(string $projectRoot, ?string $envName): array
+    {
+        if ($envName !== null) {
+            $path = $projectRoot . DIRECTORY_SEPARATOR . '.env.' . $envName;
+
+            if (!is_file($path)) {
+                throw new \RuntimeException(
+                    "Environment file [.env.{$envName}] not found in [{$projectRoot}]. " .
+                    "Create the file or check the --env value."
+                );
+            }
+
+            return EnvLoader::load($path);
+        }
+
+        // Fallback: plain .env (optional — no error if missing)
+        $fallback = $projectRoot . DIRECTORY_SEPARATOR . '.env';
+
+        return is_file($fallback) ? EnvLoader::load($fallback) : [];
+    }
+
+    /**
+     * Recursively replace ${VAR} tokens in string values with env values.
+     * Unresolved tokens are left as-is.
+     */
+    private static function substituteTokens(array $data, array $env): array
+    {
+        foreach ($data as $key => $value) {
+            if (is_array($value)) {
+                $data[$key] = static::substituteTokens($value, $env);
+            } elseif (is_string($value)) {
+                $data[$key] = (string) preg_replace_callback(
+                    '/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/',
+                    static fn (array $m) => $env[$m[1]] ?? $m[0],
+                    $value
+                );
+            }
+        }
+
+        return $data;
     }
 
     private static function loadMenus(string $projectRoot): array
