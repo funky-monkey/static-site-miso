@@ -14,6 +14,7 @@ This is a PHP-based static site generator inspired by HydePHP and Jekyll. It com
 - `--robots` — generates a `robots.txt` with a `Sitemap:` directive pointing to your sitemap
 - `--llms` — generates a `llms.txt` in the [llmstxt.org](https://llmstxt.org) format, a plain-text index of all pages grouped by collection for LLM consumption
 - Schema.org JSON-LD injection — drop a `*-schema.yml` file in `_config/` to activate structured data for any page or collection
+- Environment-aware builds — `--env=NAME` loads `.env.NAME` and substitutes `${VAR}` tokens in `site.yaml` and `menu.yaml` at build time; exposes vars as `env` in all Twig templates
 - Single PHP CLI (`miso`) that you can install locally or globally
 
 ### Installation
@@ -126,6 +127,48 @@ collections:
 
 Add a new collection by creating another subdirectory in `content/` (for example `content/projects/`) and mirroring it in the `collections:` section if you need custom layouts or pagination settings. Provide a `_config/menu.yaml` to manage navigation; by default `menus.primary` is rendered as the main menu.
 
+### Environment Variables
+
+Use `--env=NAME` to load a `.env.NAME` file from the project root. After YAML parsing, Miso substitutes `${VAR}` tokens in both `site.yaml` and `menu.yaml`. This is the recommended way to handle staging vs production URLs without committing secrets.
+
+**`.env.production`**
+```bash
+SITE_URL=https://example.com
+APP_URL=https://app.example.com
+```
+
+**`.env.staging`**
+```bash
+SITE_URL=https://staging.example.com
+APP_URL=https://staging.app.example.com
+```
+
+**`_config/site.yaml`**
+```yaml
+site:
+  base_url: "${SITE_URL}"
+```
+
+**`_config/menu.yaml`**
+```yaml
+actions:
+  - title: "Login"
+    url: "${APP_URL}/login/"
+    style: "outline"
+```
+
+Rules:
+- Miso **hard-fails** with a clear error if `--env=NAME` is given but `.env.NAME` does not exist — prevents silent wrong-URL builds on CI
+- If `--env` is omitted, Miso falls back to a plain `.env` file; if that is also absent, no substitution occurs and unresolved tokens remain as-is
+- Env vars are also available in all Twig templates as `{{ env.VAR_NAME }}`
+- Commit a `.env.example` with dummy values; gitignore `.env.*` except `.env.example`
+
+```bash
+miso build --env=staging
+miso build --env=production --sitemap --robots
+miso run --env=staging --watch
+```
+
 ### Usage
 
 Create a new project anywhere with:
@@ -151,7 +194,15 @@ miso build --sitemap   # generate sitemap.xml
 miso build --robots    # generate robots.txt
 miso build --llms      # generate llms.txt
 miso build --rss       # generate feed.xml (RSS 2.0)
+miso build --search    # generate search.json
 miso build --sitemap --robots --llms --rss  # all four together
+```
+
+Use `--env` to load environment-specific variables (see [Environment Variables](#environment-variables)):
+
+```bash
+miso build --env=staging
+miso build --env=production --sitemap --robots
 ```
 
 Override defaults when needed:
@@ -194,10 +245,11 @@ When a change is detected, the full site is rebuilt in place and the running PHP
 
 > **Note:** `--watch` uses polling, not filesystem events, so it works across all platforms and network file systems without any additional dependencies. There is no browser live-reload; refresh the page manually after a rebuild.
 
-The `--sitemap`, `--robots`, and `--llms` flags also work with `miso run` and `miso run --watch`:
+The `--sitemap`, `--robots`, `--llms`, and `--env` flags also work with `miso run` and `miso run --watch`:
 
 ```bash
 miso run --watch --sitemap --robots --llms --rss
+miso run --watch --env=staging
 ```
 
 ### Generated Files
