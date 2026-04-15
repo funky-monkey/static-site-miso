@@ -3,7 +3,11 @@
 
 declare(strict_types=1);
 
-require __DIR__ . '/../vendor/autoload.php';
+if (isset($GLOBALS['_composer_autoload_path'])) {
+    require_once $GLOBALS['_composer_autoload_path'];
+} else {
+    require_once __DIR__ . '/../vendor/autoload.php';
+}
 
 use Miso\Content\ContentLoader;
 use Miso\Content\FrontMatterParser;
@@ -19,7 +23,7 @@ use Miso\Twig\PluginLoader;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
-const VERSION = '0.2.4';
+const VERSION = '0.2.5';
 const COPYRIGHT = '© Sidney de Koning, 2025 — Miso v' . VERSION;
 
 $originalArguments = $argv;
