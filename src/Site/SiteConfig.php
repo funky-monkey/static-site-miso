@@ -190,10 +190,18 @@ class SiteConfig
             return EnvLoader::load($path);
         }
 
-        // Fallback: plain .env (optional — no error if missing)
+        // Fallback: plain .env
         $fallback = $projectRoot . DIRECTORY_SEPARATOR . '.env';
 
-        return is_file($fallback) ? EnvLoader::load($fallback) : [];
+        if (is_file($fallback)) {
+            return EnvLoader::load($fallback);
+        }
+
+        throw new \RuntimeException(
+            "No --env flag provided and no .env fallback file found in [{$projectRoot}].\n" .
+            "Run with --env=NAME to load a .env.NAME file (e.g. --env=staging or --env=production).\n" .
+            "If this project does not use environment variables, create an empty .env file to suppress this error."
+        );
     }
 
     /**
