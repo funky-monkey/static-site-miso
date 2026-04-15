@@ -19,7 +19,7 @@ use Miso\Twig\PluginLoader;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
-const VERSION = '0.2.1';
+const VERSION = '0.2.2';
 const COPYRIGHT = '© Sidney de Koning, 2025';
 
 $originalArguments = $argv;
