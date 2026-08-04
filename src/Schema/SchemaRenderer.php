@@ -119,10 +119,35 @@ class SchemaRenderer
                 '@type'    => 'ListItem',
                 'position' => $position++,
                 'name'     => $label,
-                'item'     => $baseUrl . '/' . ltrim($url, '/'),
+                'item'     => $this->absoluteUrl($url, $baseUrl),
             ];
         }
 
         return $items;
+    }
+
+    /**
+     * Joins a menu URL onto the site base URL. Menu URLs may already be absolute
+     * (e.g. an external app link injected via a ${VAR} token), in which case
+     * prefixing base_url would produce a malformed "https://site/https://app/..."
+     * value, so those are returned untouched.
+     */
+    private function absoluteUrl(string $url, string $baseUrl): string
+    {
+        if ($url === '') {
+            return $baseUrl . '/';
+        }
+
+        // Absolute (https://…, http://…, //cdn…) or non-HTTP scheme (mailto:, tel:)
+        if (preg_match('#^([a-z][a-z0-9+.-]*:)?//#i', $url) || preg_match('#^[a-z][a-z0-9+.-]*:#i', $url)) {
+            return $url;
+        }
+
+        // Fragment- or query-only links resolve against the base URL itself
+        if ($url[0] === '#' || $url[0] === '?') {
+            return $baseUrl . '/' . $url;
+        }
+
+        return $baseUrl . '/' . ltrim($url, '/');
     }
 }
