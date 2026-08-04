@@ -45,7 +45,7 @@ class ContentLoader
 
             $collectionConfig = $config->collectionConfig($collectionName);
 
-            $document = $this->createDocument($file->getPathname(), $relativePath, $collectionName, $collectionConfig);
+            $document = $this->createDocument($file->getPathname(), $relativePath, $collectionName, $collectionConfig, $config->env());
 
             if (!isset($collections[$collectionName])) {
                 $collections[$collectionName] = new Collection($collectionName, $collectionConfig);
@@ -57,7 +57,7 @@ class ContentLoader
         return $collections;
     }
 
-    private function createDocument(string $absolutePath, string $relativePath, string $collection, array $collectionConfig): Document
+    private function createDocument(string $absolutePath, string $relativePath, string $collection, array $collectionConfig, array $env = []): Document
     {
         $raw = file_get_contents($absolutePath);
 
@@ -70,6 +70,12 @@ class ContentLoader
         $frontMatter = $parsed['data'];
         $body = $parsed['body'];
         $html = $this->markdown->convert($body);
+
+        // Resolve ${VAR} tokens in content, mirroring site.yaml/menu.yaml. Applied
+        // after Markdown conversion so env values cannot alter document structure.
+        // Unresolved tokens are left as-is.
+        $html = SiteConfig::substituteTokensInString($html, $env);
+        $body = SiteConfig::substituteTokensInString($body, $env);
 
         $slug = $frontMatter['slug'] ?? $this->slugFromPath($relativePath);
         $date = $this->resolveDate($frontMatter, $relativePath);

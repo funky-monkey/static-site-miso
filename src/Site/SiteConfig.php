@@ -214,15 +214,30 @@ class SiteConfig
             if (is_array($value)) {
                 $data[$key] = static::substituteTokens($value, $env);
             } elseif (is_string($value)) {
-                $data[$key] = (string) preg_replace_callback(
-                    '/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/',
-                    static fn (array $m) => $env[$m[1]] ?? $m[0],
-                    $value
-                );
+                $data[$key] = static::substituteTokensInString($value, $env);
             }
         }
 
         return $data;
+    }
+
+    /**
+     * Replace ${VAR} tokens in a single string with env values.
+     * Unresolved tokens are left as-is.
+     *
+     * @param array<string, string> $env
+     */
+    public static function substituteTokensInString(string $value, array $env): string
+    {
+        if ($env === [] || !str_contains($value, '${')) {
+            return $value;
+        }
+
+        return (string) preg_replace_callback(
+            '/\$\{([A-Za-z_][A-Za-z0-9_]*)\}/',
+            static fn (array $m) => $env[$m[1]] ?? $m[0],
+            $value
+        );
     }
 
     private static function loadMenus(string $projectRoot): array
