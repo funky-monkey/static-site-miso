@@ -26,7 +26,7 @@ class StaticSiteGenerator
     }
 
     /**
-     * @param array{sitemap?: bool, robots?: bool, llms?: bool, rss?: bool, search?: bool} $flags
+     * @param array{sitemap?: bool, robots?: bool, llms?: bool, rss?: bool, search?: bool, 'ai-seo'?: bool} $flags
      */
     public function build(array $flags = []): void
     {
@@ -48,11 +48,13 @@ class StaticSiteGenerator
 
         $this->copyAssets($outputDir);
 
+        $aiSeo = $flags['ai-seo'] ?? false;
+
         if ($flags['sitemap'] ?? false) {
-            $this->generateSitemap($outputDir, $pages);
+            $this->generateSitemap($outputDir, $pages, $aiSeo);
         }
         if ($flags['robots'] ?? false) {
-            $this->generateRobots($outputDir);
+            $this->generateRobots($outputDir, $aiSeo);
         }
         if ($flags['llms'] ?? false) {
             $this->generateLlmsTxt($outputDir, $pages);
@@ -130,13 +132,16 @@ class StaticSiteGenerator
             $this->filesystem->writeFile($path, $html);
 
             $pages[] = [
-                'permalink'   => $permalink,
-                'title'       => (string) ($document->frontMatter['title'] ?? $document->slug),
-                'description' => (string) ($document->frontMatter['excerpt'] ?? $document->frontMatter['description'] ?? $document->frontMatter['meta_description'] ?? ''),
-                'content'     => trim((string) preg_replace('/\s+/', ' ', strip_tags($document->contentHtml))),
-                'date'        => $document->date,
-                'collection'  => $collection->name,
-                'type'        => 'item',
+                'permalink'         => $permalink,
+                'title'             => (string) ($document->frontMatter['title'] ?? $document->slug),
+                'description'       => (string) ($document->frontMatter['excerpt'] ?? $document->frontMatter['description'] ?? $document->frontMatter['meta_description'] ?? ''),
+                'content'           => trim((string) preg_replace('/\s+/', ' ', strip_tags($document->contentHtml))),
+                'date'              => $document->date,
+                'collection'        => $collection->name,
+                'type'              => 'item',
+                'sitemap_priority'  => isset($document->frontMatter['sitemap_priority']) ? (string) $document->frontMatter['sitemap_priority'] : null,
+                'sitemap_changefreq' => isset($document->frontMatter['sitemap_changefreq']) ? (string) $document->frontMatter['sitemap_changefreq'] : null,
+                'sitemap_lastmod'   => isset($document->frontMatter['sitemap_lastmod']) ? (string) $document->frontMatter['sitemap_lastmod'] : null,
             ];
         }
 
@@ -202,23 +207,23 @@ class StaticSiteGenerator
             $this->filesystem->writeFile($path, $html);
 
             $listingPages[] = [
-                'permalink'   => $permalink,
-                'title'       => (string) ($collection->config['title'] ?? $collection->name),
-                'description' => '',
-                'content'     => '',
-                'date'        => null,
-                'collection'  => $collection->name,
-                'type'        => 'listing',
+                'permalink'          => $permalink,
+                'title'              => (string) ($collection->config['title'] ?? $collection->name),
+                'description'        => '',
+                'content'            => '',
+                'date'               => null,
+                'collection'         => $collection->name,
+                'type'               => 'listing',
+                'sitemap_priority'   => null,
+                'sitemap_changefreq' => null,
+                'sitemap_lastmod'    => null,
             ];
         }
 
         return $listingPages;
     }
 
-    /**
-     * @param list<array{permalink: string, title: string, description: string, content: string, date: ?\DateTimeImmutable, collection: string, type: string}> $pages
-     */
-    private function generateSitemap(string $outputDir, array $pages): void
+    private function generateSitemap(string $outputDir, array $pages, bool $aiSeo = false): void
     {
         $baseUrl = rtrim((string) ($this->config->get('site.base_url') ?? ''), '/');
         $lines = ['<?xml version="1.0" encoding="UTF-8"?>'];
@@ -228,9 +233,22 @@ class StaticSiteGenerator
             $loc = $baseUrl . '/' . ltrim($page['permalink'], '/');
             $lines[] = '  <url>';
             $lines[] = '    <loc>' . htmlspecialchars($loc, ENT_XML1) . '</loc>';
-            if ($page['date'] !== null) {
-                $lines[] = '    <lastmod>' . $page['date']->format('Y-m-d') . '</lastmod>';
+
+            $lastmod = $page['sitemap_lastmod'] ?? null;
+            if ($lastmod === null && $page['date'] !== null) {
+                $lastmod = $page['date']->format('Y-m-d');
             }
+            if ($lastmod !== null) {
+                $lines[] = '    <lastmod>' . htmlspecialchars($lastmod, ENT_XML1) . '</lastmod>';
+            }
+
+            if ($aiSeo) {
+                $priority = $page['sitemap_priority'] ?? $this->defaultSitemapPriority($page);
+                $changefreq = $page['sitemap_changefreq'] ?? $this->defaultSitemapChangefreq($page);
+                $lines[] = '    <changefreq>' . htmlspecialchars($changefreq, ENT_XML1) . '</changefreq>';
+                $lines[] = '    <priority>' . htmlspecialchars($priority, ENT_XML1) . '</priority>';
+            }
+
             $lines[] = '  </url>';
         }
 
@@ -238,14 +256,60 @@ class StaticSiteGenerator
         $this->filesystem->writeFile($outputDir . DIRECTORY_SEPARATOR . 'sitemap.xml', implode("\n", $lines) . "\n");
     }
 
-    private function generateRobots(string $outputDir): void
+    /** @param array{permalink: string, collection: string, type: string} $page */
+    private function defaultSitemapPriority(array $page): string
+    {
+        $permalink = rtrim($page['permalink'], '/');
+        if ($permalink === '' || $permalink === '/index') {
+            return '1.0';
+        }
+        if ($page['type'] === 'listing') {
+            return '0.5';
+        }
+        return match ($page['collection']) {
+            'pages' => '0.8',
+            'blog', 'casestudies' => '0.7',
+            default => '0.6',
+        };
+    }
+
+    /** @param array{collection: string, type: string} $page */
+    private function defaultSitemapChangefreq(array $page): string
+    {
+        if ($page['type'] === 'listing') {
+            return 'weekly';
+        }
+        return match ($page['collection']) {
+            'blog' => 'monthly',
+            default => 'monthly',
+        };
+    }
+
+    private function generateRobots(string $outputDir, bool $aiSeo = false): void
     {
         $baseUrl = rtrim((string) ($this->config->get('site.base_url') ?? ''), '/');
         $content = "User-agent: *\nAllow: /\n";
+
+        if ($aiSeo) {
+            $aiBots = ['GPTBot', 'ChatGPT-User', 'ClaudeBot', 'PerplexityBot', 'Google-Extended', 'CCBot', 'FacebookBot', 'Applebot-Extended'];
+            foreach ($aiBots as $bot) {
+                $content .= "\nUser-agent: {$bot}\nAllow: /\n";
+            }
+        }
+
         if ($baseUrl !== '') {
             $content .= "\nSitemap: {$baseUrl}/sitemap.xml\n";
         }
         $this->filesystem->writeFile($outputDir . DIRECTORY_SEPARATOR . 'robots.txt', $content);
+    }
+
+    private function normalizeLlmsText(string $text): string
+    {
+        return str_replace(
+            ["\u{2013}", "\u{2014}", "\u{2018}", "\u{2019}", "\u{201C}", "\u{201D}", "\u{2026}"],
+            ['-',        '-',        "'",         "'",         '"',        '"',        '...'],
+            $text
+        );
     }
 
     /**
@@ -275,8 +339,8 @@ class StaticSiteGenerator
             $lines[] = '';
             foreach ($collectionPages as $page) {
                 $url = $baseUrl . '/' . ltrim($page['permalink'], '/');
-                $desc = $page['description'] !== '' ? ': ' . $page['description'] : '';
-                $lines[] = "- [{$page['title']}]({$url}){$desc}";
+                $desc = $page['description'] !== '' ? ': ' . $this->normalizeLlmsText($page['description']) : '';
+                $lines[] = "- [{$this->normalizeLlmsText($page['title'])}]({$url}){$desc}";
             }
             $lines[] = '';
         }

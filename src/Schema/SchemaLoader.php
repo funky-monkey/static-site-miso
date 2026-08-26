@@ -11,7 +11,7 @@ class SchemaLoader
     /**
      * Scans the _config directory for *-schema.yml files and returns their parsed contents.
      *
-     * @return list<array{vars: array<string, mixed>, schema: array<string, mixed>, collections?: list<string>}>
+     * @return list<array{vars: array<string, mixed>, schema: array<string, mixed>, collections: ?list<string>, requires: ?string}>
      */
     public function load(string $configDir): array
     {
@@ -35,6 +35,7 @@ class SchemaLoader
                 'vars'        => is_array($data['vars'] ?? null) ? $data['vars'] : [],
                 'schema'      => $data['schema'],
                 'collections' => is_array($data['collections'] ?? null) ? $data['collections'] : null,
+                'requires'    => is_string($data['requires'] ?? null) ? $data['requires'] : null,
             ];
         }
 

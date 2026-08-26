@@ -1,0 +1,19 @@
+# HowTo schema — emitted only on pages that define a 'howto_steps' key in front matter.
+#
+# Front matter format:
+#   howto_steps:
+#     - name: "Install the plugin"
+#       text: "Download the ZIP and activate it via WordPress Plugins > Add New."
+#     - name: "Enter your GA4 credentials"
+#       text: "Paste your Measurement ID (G-XXXXXXXX) and API Secret in the plugin settings."
+#
+# Miso auto-builds the step array from page.howto_steps — you don't need to define it here.
+# Add 'total_time' (ISO 8601 duration, e.g. PT10M) to your front matter for best results.
+requires: howto_steps
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "HowTo"
+  name: "{{ page.title }}"
+  description: "{{ page.meta_description ?? page.description ?? '' }}"
+  totalTime: "{{ page.howto_total_time ?? 'PT10M' }}"

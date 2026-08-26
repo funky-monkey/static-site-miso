@@ -1,0 +1,17 @@
+# FAQPage schema — emitted only on pages that define a 'faq' key in front matter.
+#
+# Front matter format:
+#   faq:
+#     - question: "What is server-side tracking?"
+#       answer: "Server-side tracking sends analytics events from your server..."
+#     - question: "Does it work with ad-blockers?"
+#       answer: "Yes. Because events are sent from your server, ad-blockers cannot intercept them."
+#
+# Miso auto-builds the mainEntity array from page.faq — you don't need to define it here.
+requires: faq
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "FAQPage"
+  name: "{{ page.title }}"
+  url: "{{ site.base_url }}{{ page.permalink }}"

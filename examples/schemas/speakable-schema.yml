@@ -1,0 +1,20 @@
+# Speakable schema — marks CSS selectors that contain content suitable for
+# voice assistants and AI summary extraction.
+#
+# Adjust cssSelector to match the class names in your templates.
+# Common selectors: "h1", ".post-content", "article", ".page-body"
+#
+# This applies to all pages. To limit to a collection, add:
+#   collections:
+#     - blog
+
+schema:
+  "@context": "https://schema.org"
+  "@type": "WebPage"
+  url: "{{ site.base_url }}{{ page.permalink }}"
+  speakable:
+    "@type": "SpeakableSpecification"
+    cssSelector:
+      - "h1"
+      - "article"
+      - ".content"

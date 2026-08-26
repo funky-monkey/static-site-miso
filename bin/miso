@@ -23,7 +23,7 @@ use Miso\Twig\PluginLoader;
 use Twig\Environment;
 use Twig\Loader\FilesystemLoader;
 
-const VERSION = '0.2.5';
+const VERSION = '0.2.6';
 const COPYRIGHT = '© Sidney de Koning, 2025 — Miso v' . VERSION;
 
 $originalArguments = $argv;
@@ -77,6 +77,7 @@ Options:
   --llms             Generate llms.txt in the output directory [build, run]
   --rss              Generate feed.xml (RSS 2.0) in the output directory [build, run]
   --search           Generate search.json (Fuse.js / Lunr compatible) in the output directory [build, run]
+  --ai-seo           Enhance robots.txt with explicit AI crawler rules and sitemap.xml with priority/changefreq tags [build, run]
   --env=NAME         Load .env.NAME from the project root for token substitution in site.yaml and menu.yaml [build, run]
 
 HELP;
@@ -92,6 +93,7 @@ function buildFlags(array $options): array
         'llms'    => isset($options['llms']),
         'rss'     => isset($options['rss']),
         'search'  => isset($options['search']),
+        'ai-seo'  => isset($options['ai-seo']),
     ];
 }
 

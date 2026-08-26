@@ -16,7 +16,7 @@ class SchemaRenderer
     /**
      * Renders all applicable schemas for a given page and returns an array of JSON-LD strings.
      *
-     * @param list<array{vars: array<string, mixed>, schema: array<string, mixed>, collections: ?list<string>}> $schemas
+     * @param list<array{vars: array<string, mixed>, schema: array<string, mixed>, collections: ?list<string>, requires: ?string}> $schemas
      * @param array<string, mixed> $site
      * @param array<string, mixed> $page
      * @param array<string, mixed> $menus
@@ -32,6 +32,12 @@ class SchemaRenderer
                 if ($collectionName === null || !in_array($collectionName, $schemaConfig['collections'], true)) {
                     continue;
                 }
+            }
+
+            // Skip if a required front matter key is absent or empty
+            $requires = $schemaConfig['requires'] ?? null;
+            if ($requires !== null && empty($page[$requires])) {
+                continue;
             }
 
             $json = $this->render($schemaConfig, $site, $page, $menus);
@@ -65,6 +71,16 @@ class SchemaRenderer
             $schema['itemListElement'] = $this->buildBreadcrumbItems($menus, $context);
         }
 
+        // Auto-build mainEntity for FAQPage from page.faq front matter
+        if (($schema['@type'] ?? '') === 'FAQPage') {
+            $schema['mainEntity'] = $this->buildFaqMainEntity($page);
+        }
+
+        // Auto-build step for HowTo from page.howto_steps front matter
+        if (($schema['@type'] ?? '') === 'HowTo') {
+            $schema['step'] = $this->buildHowToSteps($page);
+        }
+
         try {
             $rendered = $this->renderValues($schema, $context);
         } catch (\Throwable) {
@@ -91,6 +107,74 @@ class SchemaRenderer
         }
 
         return $value;
+    }
+
+    /**
+     * Builds FAQPage mainEntity from page.faq front matter.
+     * Expected front matter format:
+     *   faq:
+     *     - question: "What is X?"
+     *       answer: "X is..."
+     *
+     * @param array<string, mixed> $page
+     * @return list<array<string, mixed>>
+     */
+    private function buildFaqMainEntity(array $page): array
+    {
+        $faqItems = $page['faq'] ?? [];
+        if (!is_array($faqItems)) {
+            return [];
+        }
+
+        $mainEntity = [];
+        foreach ($faqItems as $item) {
+            if (!is_array($item)) {
+                continue;
+            }
+            $mainEntity[] = [
+                '@type' => 'Question',
+                'name'  => (string) ($item['question'] ?? ''),
+                'acceptedAnswer' => [
+                    '@type' => 'Answer',
+                    'text'  => (string) ($item['answer'] ?? ''),
+                ],
+            ];
+        }
+
+        return $mainEntity;
+    }
+
+    /**
+     * Builds HowTo step array from page.howto_steps front matter.
+     * Expected front matter format:
+     *   howto_steps:
+     *     - name: "Install the plugin"
+     *       text: "Download and activate the plugin..."
+     *
+     * @param array<string, mixed> $page
+     * @return list<array<string, mixed>>
+     */
+    private function buildHowToSteps(array $page): array
+    {
+        $steps = $page['howto_steps'] ?? [];
+        if (!is_array($steps)) {
+            return [];
+        }
+
+        $howToSteps = [];
+        foreach ($steps as $i => $step) {
+            if (!is_array($step)) {
+                continue;
+            }
+            $howToSteps[] = [
+                '@type'    => 'HowToStep',
+                'position' => $i + 1,
+                'name'     => (string) ($step['name'] ?? $step['title'] ?? ''),
+                'text'     => (string) ($step['text'] ?? $step['description'] ?? ''),
+            ];
+        }
+
+        return $howToSteps;
     }
 
     /**
